@@ -1,0 +1,29 @@
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+  <ribbon>
+    <tabs>
+      <tab id="tabTexMathTools" label="Tex Math Tools">
+        <group id="grpTexConverter" label="LaTeX Converter">
+          
+          <!-- Convert Selection Button -->
+          <button id="btnConvertSelection" 
+                  label="Convert Selection" 
+                  imageMso="EquationInsert" 
+                  size="large" 
+                  onAction="OnConvertSelectionClick" 
+                  screentip="Convert Selection" 
+                  supertip="Converts the currently selected LaTeX code ($...$ or $$...$$) into a native Word inline OMML equation." />
+                  
+          <!-- Batch Convert All Button -->
+          <button id="btnBatchConvertDoc" 
+                  label="Batch Convert All" 
+                  imageMso="EquationOptions" 
+                  size="large" 
+                  onAction="OnBatchConvertDocClick" 
+                  screentip="Batch Convert Document" 
+                  supertip="Scans the entire active document, finds all $...$ and $$...$$ LaTeX math code, and converts them to native Word OMML equations." />
+                  
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

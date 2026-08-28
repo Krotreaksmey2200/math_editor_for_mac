@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <title>MathTeX Editor Add-in</title>
+  <!-- Office.js library -->
+  <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background-color: #1e1e2e;
+      color: #cdd6f4;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    h1 {
+      font-size: 18px;
+      color: #cba6f7;
+      margin-top: 0;
+      border-bottom: 1px solid #313244;
+      padding-bottom: 8px;
+    }
+    .status-box {
+      background-color: #181825;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #313244;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .connected { background-color: #a6e3a1; }
+    .disconnected { background-color: #f38ba8; }
+    .info {
+      font-size: 13px;
+      color: #a6adc8;
+      line-height: 1.5;
+    }
+    .equation-list {
+      flex-grow: 1;
+      overflow-y: auto;
+      background-color: #11111b;
+      border-radius: 8px;
+      padding: 8px;
+      border: 1px solid #313244;
+    }
+    .equation-item {
+      padding: 8px;
+      border-bottom: 1px solid #313244;
+      font-family: monospace;
+      font-size: 12px;
+      color: #fab387;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MathTeX Integration</h1>
+    <div class="status-box">
+      <div>
+        <span id="status-indicator" class="status-dot disconnected"></span>
+        <span id="status-text">Disconnected from Desktop app</span>
+      </div>
+      <p class="info" style="margin: 8px 0 0 0;">
+        Open the MathTeX desktop application. It will automatically connect and stream equations.
+      </p>
+    </div>
+    <div class="info" style="margin-bottom: 8px;">Received Equations History:</div>
+    <div id="equation-list" class="equation-list">
+      <div style="color: #585b70; text-align: center; margin-top: 20px;">No equations received yet.</div>
+    </div>
+  </div>
+
+  <script src="taskpane.js"></script>
+</body>
+</html>
