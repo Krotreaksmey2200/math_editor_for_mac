@@ -16,7 +16,7 @@ interface TeXOutput {
   mathml: string | null;
 }
 
-const svgToPngBase64 = (svgString: string, scale: number = 4): Promise<string> => {
+const svgToPngBase64 = (svgString: string, scale: number = 10): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     let finalSvg = svgString;
@@ -278,7 +278,7 @@ export default function App() {
         finalPngBase64 = result.png_base64!;
       } else {
         // Generate high-res PNG from SVG directly in the browser!
-        finalPngBase64 = await svgToPngBase64(result.svg, 4);
+        finalPngBase64 = await svgToPngBase64(result.svg, 10);
       }
       
       // Always tell backend we are sending PNG because Word pasting needs it
@@ -347,7 +347,7 @@ export default function App() {
       if (hasRealPng) {
         finalPngBase64 = result.png_base64!;
       } else {
-        finalPngBase64 = await svgToPngBase64(result.svg, 4);
+        finalPngBase64 = await svgToPngBase64(result.svg, 10);
       }
       
       const isSvg = false;
