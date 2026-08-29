@@ -72,6 +72,7 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string>("");
   const [baselineEnabled, setBaselineEnabled] = useState<boolean>(true);
   const [wordConnected, setWordConnected] = useState<boolean>(false);
+  const [showAbout, setShowAbout] = useState<boolean>(false);
   
   const mathFieldRef = useRef<any>(null);
 
@@ -501,14 +502,57 @@ export default function App() {
         <div className="px-2 border-r border-[#a3a3a3] h-full flex items-center shadow-[1px_0_0_#fff]">
           Size: Full
         </div>
-        <div className="px-2 border-r border-[#a3a3a3] h-full flex items-center shadow-[1px_0_0_#fff]">
-          Zoom: 200%
-        </div>
         <div className="px-2 flex-1 flex justify-between items-center text-[#666]">
           <span>Color: Black</span>
-          <span>MacTeX - MathType 7 UI Clone</span>
+          <span 
+            className="cursor-pointer hover:text-[#0055cc] hover:underline"
+            onClick={() => setShowAbout(true)}
+            title="About MacTeX MathEditor"
+          >
+            MacTeX
+          </span>
         </div>
       </div>
+      {/* About Modal */}
+      {showAbout && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center font-sans">
+          <div className="bg-[#ececec] border border-[#a3a3a3] rounded-md shadow-xl w-[350px] flex flex-col overflow-hidden">
+            <div className="bg-[#dcdcdc] border-b border-[#a3a3a3] px-3 py-2 flex justify-between items-center">
+              <span className="font-bold text-[#333] text-sm">About MacTeX MathEditor</span>
+              <button onClick={() => setShowAbout(false)} className="text-[#666] hover:text-black focus:outline-none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6 flex flex-col items-center text-center gap-3 bg-white">
+              <div className="w-16 h-16 bg-[#f3e4d6] rounded-xl flex items-center justify-center border border-[#d8b08c] shadow-sm mb-2">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cc5500" strokeWidth="1.5">
+                  <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9" />
+                  <path d="m8 17 4 4 4-4" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-[#333]">MacTeX MathEditor</h2>
+              <p className="text-sm text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full">Version 1.0.0</p>
+              
+              <div className="mt-4 pt-4 border-t border-gray-100 w-full flex flex-col items-center">
+                <p className="text-sm text-gray-600">Created by</p>
+                <p className="text-base font-bold text-[#0055cc] mt-1">K. reaksmey</p>
+              </div>
+            </div>
+
+            <div className="bg-[#dcdcdc] border-t border-[#a3a3a3] px-3 py-2 flex justify-center">
+              <button 
+                onClick={() => setShowAbout(false)} 
+                className="px-6 py-1 bg-white border border-[#a3a3a3] rounded text-sm hover:bg-gray-50 focus:outline-none shadow-sm"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

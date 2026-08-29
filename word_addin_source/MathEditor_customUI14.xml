@@ -1,0 +1,19 @@
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
+  <ribbon>
+    <tabs>
+      <tab id="tabMacTex" label="MacTeX">
+        <group id="grpMathEditor" label="MathEditor">
+          
+          <button id="btnEditEquation" 
+                  label="Edit Equation" 
+                  imageMso="EquationInsert" 
+                  size="large" 
+                  onAction="OnEditEquationClick" 
+                  screentip="Edit Selected Equation" 
+                  supertip="Opens the selected MacTeX equation in MathEditor." />
+                  
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
