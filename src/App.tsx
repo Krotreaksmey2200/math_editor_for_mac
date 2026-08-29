@@ -64,6 +64,54 @@ function PaletteButton({ palette, onInsert }: { palette: MathTypePalette, onInse
   );
 }
 
+function MenuBarButton({ label, items }: { label: string, items: { label: string, action: () => void, disabled?: boolean }[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div className="relative inline-block" ref={buttonRef}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className={`flex items-center h-[20px] hover:bg-[#4a90e2] hover:text-white px-2 rounded-sm cursor-default ${isOpen ? 'bg-[#4a90e2] text-white' : ''}`}
+      >
+        {label}
+      </button>
+      
+      {isOpen && items.length > 0 && (
+        <div className="absolute top-full left-0 mt-[1px] bg-white border border-[#999999] shadow-[2px_2px_4px_rgba(0,0,0,0.2)] py-1 z-[100] min-w-[180px] flex flex-col">
+          {items.map((item, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                if (!item.disabled) {
+                  item.action();
+                  setIsOpen(false);
+                }
+              }}
+              disabled={item.disabled}
+              className="text-left px-4 py-1 hover:bg-[#4a90e2] hover:text-white text-[13px] text-black disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-black cursor-default flex items-center justify-between"
+            >
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [latex, setLatex] = useState<string>("f(x) = \\frac{ax^3 + bx^2 + 4}{x - 2}");
   const [activeMathTypeTab, setActiveMathTypeTab] = useState<string>("Algebra");
@@ -73,6 +121,9 @@ export default function App() {
   const [baselineEnabled, setBaselineEnabled] = useState<boolean>(true);
   const [wordConnected, setWordConnected] = useState<boolean>(false);
   const [showAbout, setShowAbout] = useState<boolean>(false);
+  const [latexEngine, setLatexEngine] = useState<string>("xelatex");
+  const [preamble, setPreamble] = useState<string>("\\usepackage{amsmath,amssymb,amsfonts}\n\\usepackage{xcolor}");
+  const [showPreambleEditor, setShowPreambleEditor] = useState<boolean>(false);
   
   const mathFieldRef = useRef<any>(null);
 
@@ -148,7 +199,8 @@ export default function App() {
         eqType: "inline",
         fontSize: "12pt",
         transparent: true,
-        preamble: ""
+        preamble: preamble,
+        latexEngine: latexEngine
       });
       
       // Determine if we have a real PNG or if we fallback to SVG
@@ -193,7 +245,7 @@ export default function App() {
       
       showToast("Equation copied to Word!");
     } catch (err: any) {
-      setCompileError(err.message || "Compilation failed.");
+      setCompileError(typeof err === 'string' ? err : err.message || "Compilation failed.");
       showToast("Error copying to Word.");
     } finally {
       setIsCompiling(false);
@@ -209,7 +261,8 @@ export default function App() {
         eqType: "inline",
         fontSize: "12pt",
         transparent: true,
-        preamble: ""
+        preamble: preamble,
+        latexEngine: latexEngine
       });
       
       const hasRealPng = !!result.png_base64;
@@ -248,7 +301,7 @@ export default function App() {
       
       showToast("Copied! Now paste into Word.");
     } catch (err: any) {
-      setCompileError(err.message || "Compilation failed.");
+      setCompileError(typeof err === 'string' ? err : err.message || "Compilation failed.");
       showToast("Error copying to clipboard.");
     } finally {
       setIsCompiling(false);
@@ -257,6 +310,49 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen bg-[#ECECEC] font-sans text-black selection:bg-[#B3D7FF] overflow-hidden">
+            {/* Preamble Editor Modal */}
+      {showPreambleEditor && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40">
+          <div className="bg-[#ececec] border border-[#999999] shadow-[2px_2px_10px_rgba(0,0,0,0.3)] w-[500px] flex flex-col font-sans">
+            <div className="bg-gradient-to-b from-[#ffffff] to-[#dfdfdf] px-3 py-1.5 border-b border-[#a3a3a3] flex justify-between items-center cursor-default">
+              <h2 className="text-[13px] font-semibold text-black">LaTeX Engine & Preamble</h2>
+              <button onClick={() => setShowPreambleEditor(false)} className="text-black hover:bg-[#ff4c4c] hover:text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold leading-none border border-transparent hover:border-[#cc0000]">×</button>
+            </div>
+            <div className="p-4 flex flex-col space-y-4">
+              <div className="flex items-center space-x-3">
+                <label className="text-[12px] text-black font-medium">LaTeX Engine:</label>
+                <select 
+                  value={latexEngine} 
+                  onChange={(e) => setLatexEngine(e.target.value)}
+                  className="bg-white border border-[#a3a3a3] text-[12px] px-2 py-1 rounded shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] focus:outline-none focus:border-[#4a90e2]"
+                >
+                  <option value="latex">LaTeX (DVI)</option>
+                  <option value="xelatex">XeLaTeX (XDV)</option>
+                  <option value="lualatex">LuaLaTeX (DVI)</option>
+                </select>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <label className="text-[12px] text-black font-medium">Preamble:</label>
+                <textarea 
+                  value={preamble}
+                  onChange={(e) => setPreamble(e.target.value)}
+                  className="w-full h-[150px] bg-white border border-[#a3a3a3] text-[12px] font-mono p-2 resize-none shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] focus:outline-none focus:border-[#4a90e2]"
+                  spellCheck={false}
+                />
+              </div>
+              <div className="flex justify-end pt-2">
+                <button 
+                  onClick={() => setShowPreambleEditor(false)}
+                  className="bg-white border border-[#a3a3a3] px-4 py-1 text-[12px] rounded shadow-sm hover:bg-[#e6e6e6] active:bg-[#d4d4d4]"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#34A853] text-white text-[13px] px-4 py-2 rounded shadow-md border border-[#2B8B45] animate-in fade-in slide-in-from-bottom-4">
@@ -270,14 +366,45 @@ export default function App() {
       {/* Classic Mac Menu Bar Simulation */}
       <div className="flex items-center justify-between px-2 py-1 bg-gradient-to-b from-[#f9f9f9] to-[#dfdfdf] border-b border-[#a3a3a3] text-[13px] h-[24px]">
         <div className="flex space-x-3 font-normal text-[#222]">
-          <button className="hover:bg-[#4a90e2] hover:text-white px-1.5 rounded-sm cursor-default">File</button>
-          <button className="hover:bg-[#4a90e2] hover:text-white px-1.5 rounded-sm cursor-default">Edit</button>
-          <button className="hover:bg-[#4a90e2] hover:text-white px-1.5 rounded-sm cursor-default">View</button>
-          <button className="hover:bg-[#4a90e2] hover:text-white px-1.5 rounded-sm cursor-default">Format</button>
-          <button className="hover:bg-[#4a90e2] hover:text-white px-1.5 rounded-sm cursor-default">Style</button>
-          <button className="hover:bg-[#4a90e2] hover:text-white px-1.5 rounded-sm cursor-default">Size</button>
-          <button className="hover:bg-[#4a90e2] hover:text-white px-1.5 rounded-sm cursor-default">Preferences</button>
-          <button className="hover:bg-[#4a90e2] hover:text-white px-1.5 rounded-sm cursor-default">Help</button>
+          <MenuBarButton label="File" items={[
+            { label: "New Equation", action: () => { if (mathFieldRef.current) mathFieldRef.current.value = ""; setLatex(""); } }
+          ]} />
+          <MenuBarButton label="Edit" items={[
+            { label: "Copy to Clipboard", action: handleCopyOnly },
+            { label: "Insert to Word", action: handleCompileAndCopy }
+          ]} />
+          <MenuBarButton label="View" items={[
+            { label: "Refresh Word Connection", action: async () => {
+                try {
+                  const isConnected = await invoke<boolean>("check_word_connection");
+                  setWordConnected(isConnected);
+                  showToast(isConnected ? "Word is connected" : "Word is not connected");
+                } catch(e) {
+                  showToast("Word is not connected");
+                }
+            } }
+          ]} />
+          <MenuBarButton label="Preamble" items={[
+            { label: "Edit Preamble & Engine...", action: () => setShowPreambleEditor(true) }
+          ]} />
+          <MenuBarButton label="Style" items={[
+            { label: "Text", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\text{#0}'); } },
+            { label: "Function (Roman)", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathrm{#0}'); } },
+            { label: "Variable (Italic)", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathit{#0}'); } },
+            { label: "Vector-Matrix (Bold)", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathbf{#0}'); } },
+            { label: "Calligraphic", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathcal{#0}'); } },
+            { label: "Fraktur", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathfrak{#0}'); } },
+            { label: "Blackboard Bold", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathbb{#0}'); } }
+          ]} />
+          <MenuBarButton label="Size" items={[
+            { label: "More sizes coming soon", action: () => {}, disabled: true }
+          ]} />
+          <MenuBarButton label="Preferences" items={[
+            { label: baselineEnabled ? "✓ Enable Baseline Alignment" : "  Enable Baseline Alignment", action: () => setBaselineEnabled(!baselineEnabled) }
+          ]} />
+          <MenuBarButton label="Help" items={[
+            { label: "About MacTeX MathEditor", action: () => setShowAbout(true) }
+          ]} />
         </div>
         <div className="flex space-x-2 items-center ml-auto mr-2">
           <button
@@ -295,24 +422,20 @@ export default function App() {
                 }
               }
             }}
-            className={`flex items-center space-x-1.5 px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${
+            className={`flex items-center justify-center px-2 h-[20px] rounded text-[10px] font-semibold transition-colors border ${
               wordConnected 
-                ? 'bg-green-50 border-green-200 text-green-700 cursor-default'
-                : 'bg-red-50 border-red-200 text-red-700 hover:bg-red-100 cursor-pointer'
+                ? 'text-green-600 border-transparent cursor-default'
+                : 'text-red-500 hover:text-red-600 hover:bg-white/50 border-transparent hover:border-[#a3a3a3] cursor-pointer'
             }`}
             title={wordConnected ? "Connected to Microsoft Word" : "Click to open and connect to Microsoft Word"}
           >
-            <span className="relative flex h-2 w-2">
-              {wordConnected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${wordConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
-            </span>
-            <span>{wordConnected ? "Word Connected" : "Connect Word"}</span>
+            <span>Word</span>
           </button>
         </div>
         <div className="flex space-x-1 items-center">
           <button
             onClick={() => setBaselineEnabled(!baselineEnabled)}
-            className={`flex items-center px-1.5 py-0.5 rounded border transition-all duration-200 ${
+            className={`flex items-center px-2 h-[20px] rounded border transition-all duration-200 ${
               baselineEnabled 
                 ? 'bg-[#d6e4f3] border-[#8cb0d8] shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)]' 
                 : 'hover:bg-white/50 border-transparent hover:border-[#a3a3a3]'
@@ -332,16 +455,15 @@ export default function App() {
           
           <button 
             onClick={() => invoke("open_word")}
-            className="flex items-center text-[10px] text-[#444] hover:text-black hover:bg-white/50 px-1 py-0.5 rounded border border-transparent hover:border-[#a3a3a3]"
+            className="flex items-center h-[20px] text-[10px] text-[#444] hover:text-black hover:bg-white/50 px-2 rounded border border-transparent hover:border-[#a3a3a3]"
             title="Open Microsoft Word"
           >
-            <ExternalLink className="w-3 h-3 mr-1" />
-            Word
+            Open Word
           </button>
           <button 
             onClick={handleCopyOnly}
             disabled={isCompiling}
-            className="flex items-center text-[10px] text-[#444] hover:text-black hover:bg-white/50 px-1 py-0.5 rounded border border-transparent hover:border-[#a3a3a3] disabled:opacity-50"
+            className="flex items-center h-[20px] text-[10px] text-[#444] hover:text-black hover:bg-white/50 px-2 rounded border border-transparent hover:border-[#a3a3a3] disabled:opacity-50"
             title="Copy to Clipboard"
           >
             {isCompiling ? (
@@ -354,13 +476,13 @@ export default function App() {
           <button 
             onClick={handleCompileAndCopy}
             disabled={isCompiling}
-            className="flex items-center text-[10px] text-[#444] hover:text-black hover:bg-white/50 px-1 py-0.5 rounded border border-transparent hover:border-[#a3a3a3] disabled:opacity-50"
+            className="flex items-center h-[20px] text-[10px] text-[#444] hover:text-black hover:bg-white/50 px-2 rounded border border-transparent hover:border-[#a3a3a3] disabled:opacity-50"
             title="Insert Equation to Word"
           >
             {isCompiling ? (
               <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin mr-1" />
             ) : (
-              <Send className="w-3 h-3 mr-1 text-[#0055cc]" />
+              <Send size={12} strokeWidth={1.5} className="mr-1 text-[#0055cc]" />
             )}
             Insert
           </button>
@@ -376,7 +498,7 @@ export default function App() {
                 showToast("Align failed: " + e.toString());
               }
             }}
-            className="flex items-center text-[10px] text-[#444] hover:text-[#0055cc] hover:bg-[#d6e4f3] px-1.5 py-0.5 rounded border border-transparent hover:border-[#8cb0d8] shadow-[0_1px_2px_rgba(0,0,0,0.05)] bg-white ml-1"
+            className="flex items-center h-[20px] text-[10px] text-[#444] hover:text-[#0055cc] hover:bg-[#d6e4f3] px-2 rounded border border-transparent hover:border-[#8cb0d8] shadow-[0_1px_2px_rgba(0,0,0,0.05)] bg-white ml-1"
             title="Align equations in current Word selection (or whole document)"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mr-1 text-[#0055cc]">
@@ -394,7 +516,7 @@ export default function App() {
                 showToast("Align failed: " + e.toString());
               }
             }}
-            className="flex items-center text-[10px] text-[#444] hover:text-[#cc5500] hover:bg-[#f3e4d6] px-1.5 py-0.5 rounded border border-transparent hover:border-[#d8b08c] shadow-[0_1px_2px_rgba(0,0,0,0.05)] bg-white ml-1"
+            className="flex items-center h-[20px] text-[10px] text-[#444] hover:text-[#cc5500] hover:bg-[#f3e4d6] px-2 rounded border border-transparent hover:border-[#d8b08c] shadow-[0_1px_2px_rgba(0,0,0,0.05)] bg-white ml-1"
             title="Align all MathEditor equations in the entire Word document"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mr-1 text-[#cc5500]">
@@ -443,7 +565,7 @@ export default function App() {
           
           {/* Tab Contents Area */}
           <div className="bg-[#ffffff] border-b border-l border-r border-[#a3a3a3] p-1 flex flex-wrap gap-[1px] min-h-[46px] shadow-sm">
-            {mathTypeTabItems.map((item, idx) => (
+            {(mathTypeTabItems[activeMathTypeTab] || []).map((item, idx) => (
               <button
                 key={idx}
                 onClick={() => insertLatex(item.snippet)}

@@ -190,8 +190,9 @@ async fn compile_math(
     font_size: String,
     transparent: bool,
     preamble: String,
+    latex_engine: String,
 ) -> Result<TeXOutput, String> {
-    tex_engine::compile_latex_to_svg(&latex, &eq_type, &font_size, transparent, &preamble)
+    tex_engine::compile_latex_to_svg(&latex, &eq_type, &font_size, transparent, &preamble, &latex_engine)
 }
 
 #[tauri::command]

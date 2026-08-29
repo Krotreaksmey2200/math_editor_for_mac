@@ -103,6 +103,7 @@ pub fn compile_latex_to_svg(
     font_size: &str, // "10pt", "11pt", "12pt", etc.
     transparent: bool,
     preamble: &str,
+    latex_engine: &str,
 ) -> Result<TeXOutput, String> {
     let bin_path = find_mactex_bin_path()
         .ok_or_else(|| "MacTeX binaries (latex, dvisvgm) not found. Please install MacTeX or BasicTeX.".to_string())?;
@@ -156,16 +157,29 @@ pub fn compile_latex_to_svg(
     std::fs::write(&tex_path, tex_content)
         .map_err(|e| format!("Failed to write temp latex file: {}", e))?;
 
-    // Run latex command to produce DVI
-    let latex_exe = bin_path.join("latex");
-    let latex_output = Command::new(&latex_exe)
-        .current_dir(temp_dir.path())
-        .arg("-interaction=nonstopmode")
-        .arg("equation.tex")
-        .output()
-        .map_err(|e| format!("Failed to execute latex command: {}", e))?;
+    // Run selected latex engine
+    let (exe_name, ext, extra_args) = match latex_engine {
+        "xelatex" => ("xelatex", "xdv", vec!["-no-pdf"]),
+        "lualatex" => ("dvilualatex", "dvi", vec![]),
+        _ => ("latex", "dvi", vec![]),
+    };
+    
+    let latex_exe = bin_path.join(exe_name);
+    let mut cmd = Command::new(&latex_exe);
+    cmd.current_dir(temp_dir.path())
+       .arg("-interaction=nonstopmode");
+       
+    for arg in extra_args {
+        cmd.arg(arg);
+    }
+    
+    cmd.arg("equation.tex");
+    
+    let latex_output = cmd.output()
+        .map_err(|e| format!("Failed to execute {} command: {}", exe_name, e))?;
 
-    if !temp_dir.path().join("equation.dvi").exists() {
+    let expected_output = temp_dir.path().join(format!("equation.{}", ext));
+    if !expected_output.exists() {
         let log_path = temp_dir.path().join("equation.log");
         if log_path.exists() {
             let log_content = std::fs::read_to_string(&log_path).unwrap_or_default();
@@ -174,13 +188,17 @@ pub fn compile_latex_to_svg(
                 .map(|line| line.to_string())
                 .collect();
             if !errors.is_empty() {
-                return Err(format!("LaTeX compilation error:\n{}", errors.join("\n")));
+                return Err(format!("LaTeX compilation error:
+{}", errors.join("
+")));
             }
         }
         
         let stderr_str = String::from_utf8_lossy(&latex_output.stderr).to_string();
         let stdout_str = String::from_utf8_lossy(&latex_output.stdout).to_string();
-        return Err(format!("LaTeX compilation failed to produce DVI file.\nStderr: {}\nStdout: {}", stderr_str, stdout_str));
+        return Err(format!("{} compilation failed to produce {} file.
+Stderr: {}
+Stdout: {}", exe_name, ext, stderr_str, stdout_str));
     }
 
     // Run dvisvgm command to produce SVG using TexMaths flags
@@ -190,7 +208,7 @@ pub fn compile_latex_to_svg(
         .arg("--no-styles")
         .arg("--no-fonts")
         .arg("--exact-bbox")
-        .arg("equation.dvi")
+        .arg(format!("equation.{}", ext))
         .arg("-o")
         .arg("equation.svg")
         .output()
@@ -220,7 +238,7 @@ pub fn compile_latex_to_svg(
             .arg("Transparent")
             .arg("-o")
             .arg("equation.png")
-            .arg("equation.dvi")
+            .arg(format!("equation.{}", ext))
             .output();
 
         if png_path.exists() {
@@ -262,7 +280,7 @@ mod tests {
     #[test]
     fn test_compile_math_simple() {
         let latex = "a^2 + b^2 = c^2";
-        let result = compile_latex_to_svg(latex, "inline", "", true, "");
+        let result = compile_latex_to_svg(latex, "inline", "", true, "", "latex");
         assert!(result.is_ok(), "Failed to compile: {:?}", result.err());
         let output = result.unwrap();
         assert!(output.width > 0.0);
@@ -276,7 +294,7 @@ mod tests {
     #[test]
     fn test_compile_matrix() {
         let latex = "\\begin{pmatrix} a & b \\\\ c & d \\end{pmatrix}";
-        let result = compile_latex_to_svg(latex, "display", "", true, "");
+        let result = compile_latex_to_svg(latex, "display", "", true, "", "latex");
         assert!(result.is_ok(), "Failed to compile matrix: {:?}", result.err());
         let output = result.unwrap();
         assert!(output.width > 0.0);
@@ -287,7 +305,7 @@ mod tests {
     fn test_compile_descenders() {
         // g(x) and y_p extend significantly below the baseline
         let latex = "\\frac{g(x)}{y_p}";
-        let result = compile_latex_to_svg(latex, "inline", "", true, "");
+        let result = compile_latex_to_svg(latex, "inline", "", true, "", "latex");
         assert!(result.is_ok(), "Failed to compile descenders: {:?}", result.err());
         let output = result.unwrap();
         
@@ -299,7 +317,7 @@ mod tests {
     fn test_compile_khmer() {
         // Standard ASCII math text compilation
         let latex = "f(x) = \\text{Math}";
-        let result = compile_latex_to_svg(latex, "inline", "", true, "");
+        let result = compile_latex_to_svg(latex, "inline", "", true, "", "latex");
         assert!(result.is_ok(), "Failed to compile text: {:?}", result.err());
     }
 }

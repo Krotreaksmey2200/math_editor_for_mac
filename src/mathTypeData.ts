@@ -75,15 +75,29 @@ export const mathTypeRow2: MathTypePalette[] = [
 
 export const mathTypeTabs = ["Algebra", "Derivs", "Statistics", "Matrices", "Sets", "Trig", "Geometry"];
 
-export const mathTypeTabItems = [
-  { image: "129200.png", snippet: "\\sqrt{x^2 + y^2}" }, 
-  { image: "129201.png", snippet: "\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}" }, 
-  { image: "129202.png", snippet: "\\lim_{x \\to \\infty} f(x)" }, 
-  { image: "129203.png", snippet: "\\int_{-\\infty}^{\\infty} e^{-x^2} dx" }, 
-  { image: "129204.png", snippet: "\\frac{d}{dx} f(x)" },
-  { image: "129205.png", snippet: "\\sum_{i=1}^{n} x_i" }, 
-  { image: "129206.png", snippet: "\\prod_{i=1}^{n} x_i" }, 
-  { image: "129207.png", snippet: "\\log_b(x) = \\frac{\\log_a(x)}{\\log_a(b)}" }, 
-  { image: "129208.png", snippet: "e^{i\\pi} + 1 = 0" }, 
-  { image: "129209.png", snippet: "\\cos^2(x) + \\sin^2(x) = 1" },
-];
+export const mathTypeTabItems: Record<string, { image: string, snippet: string }[]> = {
+  "Algebra": [
+    { image: "129200.png", snippet: "\sqrt{x^2 + y^2}" }, 
+    { image: "129201.png", snippet: "\frac{-b \pm \sqrt{b^2 - 4ac}}{2a}" }, 
+    { image: "129207.png", snippet: "\log_b(x) = \frac{\log_a(x)}{\log_a(b)}" }, 
+  ],
+  "Derivs": [
+    { image: "129202.png", snippet: "\lim_{x \to \infty} f(x)" }, 
+    { image: "129204.png", snippet: "\frac{d}{dx} f(x)" },
+  ],
+  "Statistics": [
+    { image: "129205.png", snippet: "\sum_{i=1}^{n} x_i" }, 
+    { image: "129206.png", snippet: "\prod_{i=1}^{n} x_i" }, 
+  ],
+  "Matrices": [
+  ],
+  "Sets": [
+  ],
+  "Trig": [
+    { image: "129208.png", snippet: "e^{i\pi} + 1 = 0" }, 
+    { image: "129209.png", snippet: "\cos^2(x) + \sin^2(x) = 1" },
+  ],
+  "Geometry": [
+    { image: "129203.png", snippet: "\int_{-\infty}^{\infty} e^{-x^2} dx" }, 
+  ]
+};
