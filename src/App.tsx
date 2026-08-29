@@ -175,6 +175,8 @@ export default function App() {
   const [baselineEnabled, setBaselineEnabled] = useState<boolean>(true);
   const [wordConnected, setWordConnected] = useState<boolean>(false);
   const [showAbout, setShowAbout] = useState<boolean>(false);
+  const [showCustomSize, setShowCustomSize] = useState<boolean>(false);
+  const [customSizeInput, setCustomSizeInput] = useState<string>("12pt");
   const [latexEngine, setLatexEngine] = useState<"latex" | "xelatex" | "lualatex">("xelatex");
   const [preamble, setPreamble] = useState(`\\usepackage{amsmath,amssymb,amsfonts}
 \\usepackage{xcolor}
@@ -480,7 +482,8 @@ export default function App() {
             { label: fontSize === "12pt" ? "✓ 12pt (Default)" : "  12pt (Default)", action: () => setFontSize("12pt") },
             { label: fontSize === "14pt" ? "✓ 14pt" : "  14pt", action: () => setFontSize("14pt") },
             { label: fontSize === "18pt" ? "✓ 18pt" : "  18pt", action: () => setFontSize("18pt") },
-            { label: fontSize === "24pt" ? "✓ 24pt" : "  24pt", action: () => setFontSize("24pt") }
+            { label: fontSize === "24pt" ? "✓ 24pt" : "  24pt", action: () => setFontSize("24pt") },
+            { label: !["10pt","11pt","12pt","14pt","18pt","24pt"].includes(fontSize) ? `✓ Custom... (${fontSize})` : "  Custom...", action: () => { setCustomSizeInput(fontSize); setShowCustomSize(true); } }
           ]} />
           <MenuBarButton label={t[appLang].pref} items={[
             { label: baselineEnabled ? `✓ ${t[appLang].enableBaseline}` : `  ${t[appLang].enableBaseline}`, action: () => setBaselineEnabled(!baselineEnabled) }
@@ -773,6 +776,71 @@ export default function App() {
                 className="px-6 py-1 bg-white border border-[#a3a3a3] rounded text-sm hover:bg-gray-50 focus:outline-none shadow-sm"
               >
                 OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Size Modal */}
+      {showCustomSize && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[9999]"
+          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}
+        >
+          <div 
+            className="bg-[#ececec] border border-[#a3a3a3] rounded-md shadow-2xl flex flex-col overflow-hidden font-sans"
+            style={{ 
+              position: 'absolute', 
+              top: '50%', 
+              left: '50%', 
+              transform: 'translate(-50%, -50%)',
+              width: '100%',
+              maxWidth: '300px'
+            }}
+          >
+            <div className="bg-[#dcdcdc] border-b border-[#a3a3a3] px-3 py-2 flex justify-between items-center">
+              <span className="font-bold text-sm" style={{ color: '#000000' }}>Custom Font Size</span>
+              <button onClick={() => setShowCustomSize(false)} className="hover:text-red-600 focus:outline-none" style={{ color: '#000000' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-4 flex flex-col gap-3 bg-white">
+              <p className="text-[13px] text-gray-700">Enter custom font size (e.g. 16pt, 32pt):</p>
+              <input 
+                type="text" 
+                value={customSizeInput}
+                onChange={(e) => setCustomSizeInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setFontSize(customSizeInput);
+                    setShowCustomSize(false);
+                  }
+                }}
+                className="border border-[#a3a3a3] rounded px-2 py-1 text-sm text-black outline-none focus:border-[#4a90e2]"
+                autoFocus
+              />
+            </div>
+
+            <div className="bg-[#dcdcdc] border-t border-[#a3a3a3] px-3 py-2 flex justify-end gap-2">
+              <button 
+                onClick={() => setShowCustomSize(false)} 
+                className="px-4 py-1 bg-white border border-[#a3a3a3] rounded text-sm hover:bg-gray-50 focus:outline-none shadow-sm"
+                style={{ color: '#000000' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setFontSize(customSizeInput);
+                  setShowCustomSize(false);
+                }} 
+                className="px-4 py-1 bg-[#4a90e2] border border-[#3070b3] rounded text-sm text-white hover:bg-[#357abd] focus:outline-none shadow-sm"
+              >
+                Set Size
               </button>
             </div>
           </div>
