@@ -1,0 +1,55 @@
+#!/bin/bash
+
+echo "Starting MacTeX MathEditor Postinstall..."
+
+# 1. Identify the current user (installer runs as root)
+CURRENT_USER=$(stat -f %Su /dev/console)
+USER_HOME=$(dscl . -read /Users/"$CURRENT_USER" NFSHomeDirectory | awk '{print $2}')
+
+if [ -z "$USER_HOME" ]; then
+    USER_HOME="/Users/$CURRENT_USER"
+fi
+
+echo "Installing plugins for user: $CURRENT_USER at $USER_HOME"
+
+# 2. Define the source of the bundled plugins inside the installed .app
+PLUGIN_SRC="/Applications/mactex-math-editor.app/Contents/Resources/word_plugin"
+
+# 3. Define target directories
+TARGET_APPLESCRIPT_DIR="$USER_HOME/Library/Application Scripts/com.microsoft.Word"
+TARGET_STARTUP_DIR="$USER_HOME/Library/Group Containers/UBF8T346G9.Office/User Content.localized/Startup.localized/Word"
+GLOBAL_STARTUP_DIR="/Library/Application Support/Microsoft/Office365/User Content.localized/Startup.localized/Word"
+
+# 4. Create directories
+mkdir -p "$TARGET_APPLESCRIPT_DIR"
+mkdir -p "$TARGET_STARTUP_DIR"
+mkdir -p "$GLOBAL_STARTUP_DIR"
+
+chown "$CURRENT_USER" "$TARGET_APPLESCRIPT_DIR"
+chown "$CURRENT_USER" "$TARGET_STARTUP_DIR"
+
+# 5. Copy AppleScript
+if [ -f "$PLUGIN_SRC/MacTeXMathEditor.scpt" ]; then
+    cp "$PLUGIN_SRC/MacTeXMathEditor.scpt" "$TARGET_APPLESCRIPT_DIR/"
+    chown "$CURRENT_USER" "$TARGET_APPLESCRIPT_DIR/MacTeXMathEditor.scpt"
+    chmod 755 "$TARGET_APPLESCRIPT_DIR/MacTeXMathEditor.scpt"
+    echo "Installed AppleScript."
+fi
+
+# 6. Copy Word Add-in (DOTM)
+if [ -f "$PLUGIN_SRC/MacTeXMathEditorPlugin.dotm" ]; then
+    cp "$PLUGIN_SRC/MacTeXMathEditorPlugin.dotm" "$TARGET_STARTUP_DIR/"
+    chown "$CURRENT_USER" "$TARGET_STARTUP_DIR/MacTeXMathEditorPlugin.dotm"
+    chmod 644 "$TARGET_STARTUP_DIR/MacTeXMathEditorPlugin.dotm"
+    
+    cp "$PLUGIN_SRC/MacTeXMathEditorPlugin.dotm" "$GLOBAL_STARTUP_DIR/"
+    chmod 644 "$GLOBAL_STARTUP_DIR/MacTeXMathEditorPlugin.dotm"
+    echo "Installed Word Add-in."
+fi
+
+# 7. Remove quarantine attributes
+xattr -d com.apple.quarantine /Applications/mactex-math-editor.app 2>/dev/null || true
+xattr -rd com.apple.quarantine /Applications/mactex-math-editor.app/* 2>/dev/null || true
+
+echo "Postinstall complete."
+exit 0
