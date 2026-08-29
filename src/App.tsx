@@ -407,7 +407,20 @@ export default function App() {
                 <label className="text-[12px] text-black font-medium">LaTeX Engine:</label>
                 <select 
                   value={latexEngine} 
-                  onChange={(e) => setLatexEngine(e.target.value)}
+                  onChange={(e) => {
+                    const newEngine = e.target.value;
+                    setLatexEngine(newEngine as any);
+                    if (newEngine === "latex") {
+                      setPreamble(prev => prev.replace(/\\usepackage\{fontspec\}\n?/g, "").replace(/\\setmainfont\{[^}]*\}\[[\s\S]*?\]\n?/g, "").trim());
+                    } else if (newEngine === "xelatex") {
+                      setPreamble(prev => {
+                        if (!prev.includes("fontspec")) {
+                          return prev + `\n\\usepackage{fontspec}\n\\setmainfont{Khmer OS System}[\n    Script=Khmer,\n    Renderer=HarfBuzz\n]`;
+                        }
+                        return prev;
+                      });
+                    }
+                  }}
                   className="bg-white border border-[#a3a3a3] text-[12px] px-2 py-1 rounded shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] focus:outline-none focus:border-[#4a90e2]"
                 >
                   <option value="latex">LaTeX (DVI)</option>

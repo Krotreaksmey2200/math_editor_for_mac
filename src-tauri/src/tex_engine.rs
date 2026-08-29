@@ -141,11 +141,19 @@ pub fn compile_latex_to_svg(
     };
     let doc_class = format!("\\documentclass[preview,border=0pt{}]{{standalone}}", font_size_opt);
     
-    let preamble_str = if preamble.trim().is_empty() {
-        "\\usepackage{amsmath,amssymb,amsfonts}\n\\usepackage{xcolor}"
+    let mut preamble_str = if preamble.trim().is_empty() {
+        "\\usepackage{amsmath,amssymb,amsfonts}\n\\usepackage{xcolor}".to_string()
     } else {
-        preamble
+        preamble.to_string()
     };
+
+    if latex_engine == "latex" {
+        // Strip fontspec and setmainfont safely for standard latex engine to prevent crashes
+        let re_fontspec = regex::Regex::new(r"\\usepackage\{fontspec\}\n?").unwrap();
+        let re_setmainfont = regex::Regex::new(r"\\setmainfont\{[^}]*\}\[[\s\S]*?\]\n?").unwrap();
+        preamble_str = re_fontspec.replace_all(&preamble_str, "").to_string();
+        preamble_str = re_setmainfont.replace_all(&preamble_str, "").to_string();
+    }
 
     let transparent_cmd = if transparent { "\\nopagecolor" } else { "" };
 
