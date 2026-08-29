@@ -48,6 +48,7 @@ const svgToPngBase64 = (svgString: string, scale: number = 4): Promise<string> =
 
 type Lang = 'en' | 'km';
 
+const t = {
   en: {
     file: "File", edit: "Edit", view: "View", preamble: "Preamble", style: "Style", size: "Size", pref: "Preferences", help: "Help",
     newEq: "New Equation", copy: "Copy to Clipboard", insert: "Insert to Word",
