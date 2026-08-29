@@ -169,7 +169,7 @@ function MenuBarButton({ label, items }: { label: string, items: { label: string
 }
 
 export default function App() {
-  const [appLang, setAppLang] = useState<Lang>("km");
+  const [appLang, setAppLang] = useState<Lang>("en");
   const [latex, setLatex] = useState<string>("f(x) = \\frac{ax^3 + bx^2 + 4}{x - 2}");
   const [activeMathTypeTab, setActiveMathTypeTab] = useState<string>("Algebra");
   const [isCompiling, setIsCompiling] = useState<boolean>(false);
@@ -181,10 +181,10 @@ export default function App() {
   const [showAbout, setShowAbout] = useState<boolean>(false);
   const [showCustomSize, setShowCustomSize] = useState<boolean>(false);
   const [customSizeInput, setCustomSizeInput] = useState<string>("12pt");
-  const [latexEngine, setLatexEngine] = useState<"latex" | "xelatex" | "lualatex">("xelatex");
+  const [latexEngine, setLatexEngine] = useState<"latex" | "xelatex" | "lualatex">("latex");
   const [preamble, setPreamble] = useState(`\\usepackage{amsmath,amssymb,amsfonts}
 \\usepackage{xcolor}
-\\usepackage{mathpazo}
+%\\usepackage{mathpazo}
 \\usepackage{fontspec}
 \\setmainfont{Khmer OS System}[
     Script=Khmer,
