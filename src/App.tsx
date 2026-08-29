@@ -13,7 +13,38 @@ interface TeXOutput {
   baseline_depth: number;
   width: number;
   height: number;
+  mathml: string | null;
 }
+
+const svgToPngBase64 = (svgString: string, scale: number = 4): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    let finalSvg = svgString;
+    if (!finalSvg.includes('xmlns=')) {
+      finalSvg = finalSvg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+    }
+    const blob = new Blob([finalSvg], {type: 'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL('image/png');
+        resolve(dataUrl);
+      } else {
+        reject(new Error("No 2d context"));
+      }
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = (e) => reject(e);
+    img.src = url;
+  });
+};
 
 function PaletteButton({ palette, onInsert }: { palette: MathTypePalette, onInsert: (tex: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -121,8 +152,15 @@ export default function App() {
   const [baselineEnabled, setBaselineEnabled] = useState<boolean>(true);
   const [wordConnected, setWordConnected] = useState<boolean>(false);
   const [showAbout, setShowAbout] = useState<boolean>(false);
-  const [latexEngine, setLatexEngine] = useState<string>("xelatex");
-  const [preamble, setPreamble] = useState<string>("\\usepackage{amsmath,amssymb,amsfonts}\n\\usepackage{xcolor}");
+  const [latexEngine, setLatexEngine] = useState<"latex" | "xelatex" | "lualatex">("xelatex");
+  const [preamble, setPreamble] = useState(`\\usepackage{amsmath,amssymb,amsfonts}
+\\usepackage{xcolor}
+\\usepackage{mathpazo}
+\\usepackage{fontspec}
+\\setmainfont{Khmer OS System}[
+    Script=Khmer,
+    Renderer=HarfBuzz % ជួយរៀបជើង និងស្រៈខ្មែរឱ្យត្រឹមត្រូវល្អ
+]`);
   const [showPreambleEditor, setShowPreambleEditor] = useState<boolean>(false);
   
   const mathFieldRef = useRef<any>(null);
@@ -205,8 +243,18 @@ export default function App() {
       
       // Determine if we have a real PNG or if we fallback to SVG
       const hasRealPng = !!result.png_base64;
-      const imageBase64 = hasRealPng ? result.png_base64 : result.base64_image;
-      const isSvg = !hasRealPng;
+      
+      let finalPngBase64 = "";
+      if (hasRealPng) {
+        finalPngBase64 = result.png_base64!;
+      } else {
+        // Generate high-res PNG from SVG directly in the browser!
+        finalPngBase64 = await svgToPngBase64(result.svg, 4);
+      }
+      
+      // Always tell backend we are sending PNG because Word pasting needs it
+      const isSvg = false;
+      const imageBase64 = finalPngBase64;
       
       const depth = result.baseline_depth.toFixed(2);
       const ext = isSvg ? "svg" : "png";
@@ -266,8 +314,15 @@ export default function App() {
       });
       
       const hasRealPng = !!result.png_base64;
-      const imageBase64 = hasRealPng ? result.png_base64 : result.base64_image;
-      const isSvg = !hasRealPng;
+      let finalPngBase64 = "";
+      if (hasRealPng) {
+        finalPngBase64 = result.png_base64!;
+      } else {
+        finalPngBase64 = await svgToPngBase64(result.svg, 4);
+      }
+      
+      const isSvg = false;
+      const imageBase64 = finalPngBase64;
       
       const depth = result.baseline_depth.toFixed(2);
       const heightVal = result.height;

@@ -172,8 +172,10 @@ unsafe fn set_macos_clipboard(svg: &str, png_bytes: &[u8], latex: &str, mathml: 
         let _: bool = msg_send![pasteboard, setString:ns_html forType:type_html];
     }
 
-    let ns_png_data = make_nsdata(png_bytes);
-    let _: bool = msg_send![pasteboard, setData:ns_png_data forType:type_png];
+    if !png_bytes.is_empty() {
+        let ns_png_data = make_nsdata(png_bytes);
+        let _: bool = msg_send![pasteboard, setData:ns_png_data forType:type_png];
+    }
 
     Ok(())
 }
@@ -236,7 +238,8 @@ async fn copy_to_clipboard(
         
         let final_html = html.replace("DATA_URI_PLACEHOLDER", &format!("file://{}", tmp_path));
         
-        set_macos_clipboard(&svg, &image_bytes, &latex, &mathml, &final_html)?;
+        let png_data_to_pass = if is_svg { &[] } else { image_bytes.as_slice() };
+        set_macos_clipboard(&svg, png_data_to_pass, &latex, &mathml, &final_html)?;
     }
 
     #[cfg(not(target_os = "macos"))]
