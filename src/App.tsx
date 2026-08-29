@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "mathlive"; // Imports the <math-field> web component
 import { mathTypeRow1, mathTypeRow2, mathTypeTabs, mathTypeTabItems, MathTypePalette } from "./mathTypeData";
-import { CheckCircle, AlertCircle, Send, ExternalLink } from "lucide-react";
+import { CheckCircle, AlertCircle, Send } from "lucide-react";
 import "./App.css";
 
 interface TeXOutput {
@@ -286,8 +286,6 @@ export default function App() {
       const imageBase64 = finalPngBase64;
       
       const depth = result.baseline_depth.toFixed(2);
-      const ext = isSvg ? "svg" : "png";
-      const mime = isSvg ? "image/svg+xml" : "image/png";
       const latexUri = encodeURIComponent(latex);
       
       const ratio = (result.baseline_depth / result.height).toFixed(4);
@@ -660,7 +658,7 @@ export default function App() {
         {/* MathType Tab Bar */}
         <div className="mt-1 flex flex-col px-1">
           <div className="flex border-b border-[#a3a3a3]">
-            {mathTypeTabs.map((tab, idx) => (
+            {mathTypeTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveMathTypeTab(tab)}
