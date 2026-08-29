@@ -171,6 +171,7 @@ export default function App() {
   const [isCompiling, setIsCompiling] = useState<boolean>(false);
   const [compileError, setCompileError] = useState<string>("");
   const [toastMessage, setToastMessage] = useState<string>("");
+  const [fontSize, setFontSize] = useState<string>("12pt");
   const [baselineEnabled, setBaselineEnabled] = useState<boolean>(true);
   const [wordConnected, setWordConnected] = useState<boolean>(false);
   const [showAbout, setShowAbout] = useState<boolean>(false);
@@ -257,7 +258,7 @@ export default function App() {
       const result: TeXOutput = await invoke("compile_math", {
         latex: `\\displaystyle ${latex}`,
         eqType: "inline",
-        fontSize: "12pt",
+        fontSize: fontSize,
         transparent: true,
         preamble: preamble,
         latexEngine: latexEngine
@@ -329,7 +330,7 @@ export default function App() {
       const result: TeXOutput = await invoke("compile_math", {
         latex: `\\displaystyle ${latex}`,
         eqType: "inline",
-        fontSize: "12pt",
+        fontSize: fontSize,
         transparent: true,
         preamble: preamble,
         latexEngine: latexEngine
@@ -474,7 +475,12 @@ export default function App() {
             { label: "Blackboard Bold", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathbb{#0}'); } }
           ]} />
           <MenuBarButton label={t[appLang].size} items={[
-            { label: "More sizes coming soon", action: () => {}, disabled: true }
+            { label: fontSize === "10pt" ? "✓ 10pt" : "  10pt", action: () => setFontSize("10pt") },
+            { label: fontSize === "11pt" ? "✓ 11pt" : "  11pt", action: () => setFontSize("11pt") },
+            { label: fontSize === "12pt" ? "✓ 12pt (Default)" : "  12pt (Default)", action: () => setFontSize("12pt") },
+            { label: fontSize === "14pt" ? "✓ 14pt" : "  14pt", action: () => setFontSize("14pt") },
+            { label: fontSize === "18pt" ? "✓ 18pt" : "  18pt", action: () => setFontSize("18pt") },
+            { label: fontSize === "24pt" ? "✓ 24pt" : "  24pt", action: () => setFontSize("24pt") }
           ]} />
           <MenuBarButton label={t[appLang].pref} items={[
             { label: baselineEnabled ? `✓ ${t[appLang].enableBaseline}` : `  ${t[appLang].enableBaseline}`, action: () => setBaselineEnabled(!baselineEnabled) }
@@ -708,7 +714,7 @@ export default function App() {
           Style: Math
         </div>
         <div className="px-2 border-r border-[#a3a3a3] h-full flex items-center shadow-[1px_0_0_#fff]">
-          Size: Full
+          Size: {fontSize}
         </div>
         <div className="px-2 flex-1 flex justify-between items-center text-[#666]">
           <span>Color: Black</span>
