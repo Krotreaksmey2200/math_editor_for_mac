@@ -812,7 +812,7 @@ export default function App() {
             </div>
             
             <div className="p-4 flex flex-col gap-3 bg-white">
-              <p className="text-[13px] text-gray-700">{t[appLang].customSizePrompt}</p>
+              <p className="text-[13px]" style={{ color: '#000000' }}>{t[appLang].customSizePrompt}</p>
               <input 
                 type="text" 
                 value={customSizeInput}
@@ -823,7 +823,8 @@ export default function App() {
                     setShowCustomSize(false);
                   }
                 }}
-                className="border border-[#a3a3a3] rounded px-2 py-1 text-sm text-black outline-none focus:border-[#4a90e2]"
+                className="border border-[#a3a3a3] rounded px-2 py-1 text-sm outline-none focus:border-[#4a90e2]"
+                style={{ color: '#000000', backgroundColor: '#ffffff' }}
                 autoFocus
               />
             </div>
