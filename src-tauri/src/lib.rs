@@ -258,56 +258,62 @@ async fn insert_into_word(_latex: String, _is_svg: bool, ratio: f64) -> Result<(
     #[cfg(target_os = "macos")]
     {
         let script = format!(r#"
-            tell application "Microsoft Word" to activate
-            
-            tell application "System Events"
-                set waitCount to 0
-                repeat while not (frontmost of process "Microsoft Word") and waitCount < 50
-                    delay 0.1
-                    set waitCount to waitCount + 1
-                end repeat
-            end tell
-            
-            tell application "Microsoft Word"
-                set startPos to start of content of text object of selection
-            end tell
-            
-            tell application "System Events"
-                keystroke "v" using command down
-            end tell
-            
-            tell application "Microsoft Word"
-                set endPos to start of content of text object of selection
-                set loopCount to 0
-                repeat while endPos = startPos and loopCount < 100
-                    delay 0.1
-                    set endPos to start of content of text object of selection
-                    set loopCount to loopCount + 1
-                end repeat
-                
-                if endPos > startPos then
-                    set picCount to count of inline pictures of active document
-                    repeat with i from 1 to picCount
-                        set theShape to inline picture i of active document
-                        set shapeObj to text object of theShape
-                        set shapeStart to start of content of shapeObj
-                        if shapeStart >= startPos and shapeStart < endPos then
-                            try
-                                set ratioVal to (run script "{}")
-                                set shapeHeight to height of theShape
-                                set actual_depth to shapeHeight * ratioVal
-                                set font position of font object of shapeObj to -actual_depth
-                            on error
-                            end try
-                        end if
-                    end repeat
+on run argv
+    set latex_str to item 1 of argv
+    
+    tell application "Microsoft Word" to activate
+    
+    tell application "System Events"
+        set waitCount to 0
+        repeat while not (frontmost of process "Microsoft Word") and waitCount < 50
+            delay 0.1
+            set waitCount to waitCount + 1
+        end repeat
+    end tell
+    
+    tell application "Microsoft Word"
+        set startPos to start of content of text object of selection
+    end tell
+    
+    tell application "System Events"
+        keystroke "v" using command down
+    end tell
+    
+    tell application "Microsoft Word"
+        set endPos to start of content of text object of selection
+        set loopCount to 0
+        repeat while endPos = startPos and loopCount < 100
+            delay 0.1
+            set endPos to start of content of text object of selection
+            set loopCount to loopCount + 1
+        end repeat
+        
+        if endPos > startPos then
+            set picCount to count of inline pictures of active document
+            repeat with i from 1 to picCount
+                set theShape to inline picture i of active document
+                set shapeObj to text object of theShape
+                set shapeStart to start of content of shapeObj
+                if shapeStart >= startPos and shapeStart < endPos then
+                    try
+                        set ratioVal to (run script "{}")
+                        set shapeHeight to height of theShape
+                        set actual_depth to shapeHeight * ratioVal
+                        set font position of font object of shapeObj to -actual_depth
+                        set alternative text of theShape to latex_str
+                    on error
+                    end try
                 end if
-            end tell
+            end repeat
+        end if
+    end tell
+end run
         "#, ratio);
         
         let output = std::process::Command::new("osascript")
             .arg("-e")
             .arg(&script)
+            .arg(&_latex)
             .output()
             .map_err(|e| format!("Failed to execute AppleScript: {}", e))?;
             
