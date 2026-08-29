@@ -46,6 +46,27 @@ const svgToPngBase64 = (svgString: string, scale: number = 4): Promise<string> =
   });
 };
 
+type Lang = 'en' | 'km';
+
+const t = {
+  en: {
+    file: "File", edit: "Edit", view: "View", preamble: "Preamble", style: "Style", size: "Size", pref: "Preferences", help: "Help",
+    newEq: "New Equation", copy: "Copy to Clipboard", insert: "Insert to Word",
+    refreshWord: "Refresh Word Connection", editPreamble: "Edit Preamble & Engine...",
+    enableBaseline: "Enable Baseline Alignment", about: "About MacTeX MathEditor",
+    created: "Created by",
+    copyBtn: "Copy to Word", insertBtn: "Insert into Word"
+  },
+  km: {
+    file: "ឯកសារ", edit: "កែប្រែ", view: "បង្ហាញ", preamble: "Preamble", style: "រចនាបថ", size: "ទំហំ", pref: "ការកំណត់", help: "ជំនួយ",
+    newEq: "បង្កើតសមីការថ្មី", copy: "ចម្លងទុក", insert: "បញ្ចូលទៅ Word",
+    refreshWord: "ភ្ជាប់ Word ឡើងវិញ", editPreamble: "កែសម្រួល Preamble...",
+    enableBaseline: "បើកមុខងារតម្រឹមជួរ", about: "អំពី MacTeX MathEditor",
+    created: "បង្កើតដោយ",
+    copyBtn: "ចម្លងទៅ Word", insertBtn: "បញ្ចូលទៅ Word"
+  }
+};
+
 function PaletteButton({ palette, onInsert }: { palette: MathTypePalette, onInsert: (tex: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLDivElement>(null);
@@ -144,6 +165,7 @@ function MenuBarButton({ label, items }: { label: string, items: { label: string
 }
 
 export default function App() {
+  const [appLang, setAppLang] = useState<Lang>("km");
   const [latex, setLatex] = useState<string>("f(x) = \\frac{ax^3 + bx^2 + 4}{x - 2}");
   const [activeMathTypeTab, setActiveMathTypeTab] = useState<string>("Algebra");
   const [isCompiling, setIsCompiling] = useState<boolean>(false);
@@ -421,15 +443,15 @@ export default function App() {
       {/* Classic Mac Menu Bar Simulation */}
       <div className="flex items-center justify-between px-2 py-1 bg-gradient-to-b from-[#f9f9f9] to-[#dfdfdf] border-b border-[#a3a3a3] text-[13px] h-[24px]">
         <div className="flex space-x-3 font-normal text-[#222]">
-          <MenuBarButton label="File" items={[
-            { label: "New Equation", action: () => { if (mathFieldRef.current) mathFieldRef.current.value = ""; setLatex(""); } }
+          <MenuBarButton label={t[appLang].file} items={[
+            { label: t[appLang].newEq, action: () => { if (mathFieldRef.current) mathFieldRef.current.value = ""; setLatex(""); } }
           ]} />
-          <MenuBarButton label="Edit" items={[
-            { label: "Copy to Clipboard", action: handleCopyOnly },
-            { label: "Insert to Word", action: handleCompileAndCopy }
+          <MenuBarButton label={t[appLang].edit} items={[
+            { label: t[appLang].copy, action: handleCopyOnly },
+            { label: t[appLang].insert, action: handleCompileAndCopy }
           ]} />
-          <MenuBarButton label="View" items={[
-            { label: "Refresh Word Connection", action: async () => {
+          <MenuBarButton label={t[appLang].view} items={[
+            { label: t[appLang].refreshWord, action: async () => {
                 try {
                   const isConnected = await invoke<boolean>("check_word_connection");
                   setWordConnected(isConnected);
@@ -439,10 +461,10 @@ export default function App() {
                 }
             } }
           ]} />
-          <MenuBarButton label="Preamble" items={[
-            { label: "Edit Preamble & Engine...", action: () => setShowPreambleEditor(true) }
+          <MenuBarButton label={t[appLang].preamble} items={[
+            { label: t[appLang].editPreamble, action: () => setShowPreambleEditor(true) }
           ]} />
-          <MenuBarButton label="Style" items={[
+          <MenuBarButton label={t[appLang].style} items={[
             { label: "Text", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\text{#0}'); } },
             { label: "Function (Roman)", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathrm{#0}'); } },
             { label: "Variable (Italic)", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathit{#0}'); } },
@@ -451,14 +473,14 @@ export default function App() {
             { label: "Fraktur", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathfrak{#0}'); } },
             { label: "Blackboard Bold", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\mathbb{#0}'); } }
           ]} />
-          <MenuBarButton label="Size" items={[
+          <MenuBarButton label={t[appLang].size} items={[
             { label: "More sizes coming soon", action: () => {}, disabled: true }
           ]} />
-          <MenuBarButton label="Preferences" items={[
-            { label: baselineEnabled ? "✓ Enable Baseline Alignment" : "  Enable Baseline Alignment", action: () => setBaselineEnabled(!baselineEnabled) }
+          <MenuBarButton label={t[appLang].pref} items={[
+            { label: baselineEnabled ? `✓ ${t[appLang].enableBaseline}` : `  ${t[appLang].enableBaseline}`, action: () => setBaselineEnabled(!baselineEnabled) }
           ]} />
-          <MenuBarButton label="Help" items={[
-            { label: "About MacTeX MathEditor", action: () => setShowAbout(true) }
+          <MenuBarButton label={t[appLang].help} items={[
+            { label: t[appLang].about, action: () => setShowAbout(true) }
           ]} />
         </div>
         <div className="flex space-x-2 items-center ml-auto mr-2">
@@ -526,7 +548,7 @@ export default function App() {
             ) : (
               <svg className="w-3 h-3 mr-1 text-[#0055cc]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
             )}
-            Copy
+            {t[appLang].copyBtn}
           </button>
           <button 
             onClick={handleCompileAndCopy}
@@ -539,7 +561,7 @@ export default function App() {
             ) : (
               <Send size={12} strokeWidth={1.5} className="mr-1 text-[#0055cc]" />
             )}
-            Insert
+            {t[appLang].insertBtn}
           </button>
 
           <div className="w-[1px] h-3 bg-[#a3a3a3] mx-1"></div>
@@ -580,6 +602,15 @@ export default function App() {
             </svg>
             <span className="font-medium">Align Document</span>
           </button>
+          
+          <select 
+            value={appLang} 
+            onChange={(e) => setAppLang(e.target.value as Lang)}
+            className="h-[18px] text-[10px] bg-white border border-[#a3a3a3] rounded text-[#333] outline-none ml-2"
+          >
+            <option value="en">EN</option>
+            <option value="km">ខ្មែរ</option>
+          </select>
         </div>
       </div>
 
@@ -725,7 +756,7 @@ export default function App() {
               <p className="text-sm font-medium bg-[#f0f0f0] px-4 py-1 rounded-full border border-[#cccccc]" style={{ color: '#000000' }}>Version 0.3.0</p>
               
               <div className="mt-4 pt-4 border-t border-[#eeeeee] w-full flex flex-col items-center">
-                <p className="text-sm font-semibold" style={{ color: '#000000' }}>Created by</p>
+                <p className="text-sm font-semibold" style={{ color: '#000000' }}>{t[appLang].created}</p>
                 <p className="text-base font-bold mt-1" style={{ color: '#0055cc' }}>KROT Reaksmey</p>
               </div>
             </div>
