@@ -766,7 +766,7 @@ export default function App() {
                 <img src="/logo.png" alt="App Logo" className="w-full h-full object-contain drop-shadow-md rounded-2xl" />
               </div>
               <h2 className="text-xl font-bold" style={{ color: '#000000' }}>MacTeX MathEditor</h2>
-              <p className="text-sm font-medium bg-[#f0f0f0] px-4 py-1 rounded-full border border-[#cccccc]" style={{ color: '#000000' }}>Version 0.3.0</p>
+              <p className="text-sm font-medium bg-[#f0f0f0] px-4 py-1 rounded-full border border-[#cccccc]" style={{ color: '#000000' }}>Version 0.4.0</p>
               
               <div className="mt-4 pt-4 border-t border-[#eeeeee] w-full flex flex-col items-center">
                 <p className="text-sm font-semibold" style={{ color: '#000000' }}>{t[appLang].created}</p>
