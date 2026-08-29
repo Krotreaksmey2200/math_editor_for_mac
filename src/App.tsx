@@ -692,11 +692,25 @@ export default function App() {
       </div>
       {/* About Modal */}
       {showAbout && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center font-sans">
-          <div className="bg-[#ececec] border border-[#a3a3a3] rounded-md shadow-xl w-[350px] flex flex-col overflow-hidden">
+        <div 
+          className="fixed inset-0 bg-black/50 z-[9999]"
+          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}
+        >
+          <div 
+            className="bg-[#ececec] border border-[#a3a3a3] rounded-md shadow-2xl flex flex-col overflow-hidden font-sans"
+            style={{ 
+              position: 'absolute', 
+              top: '50%', 
+              left: '50%', 
+              transform: 'translate(-50%, -50%)',
+              width: '100%',
+              maxWidth: '350px',
+              minWidth: '300px'
+            }}
+          >
             <div className="bg-[#dcdcdc] border-b border-[#a3a3a3] px-3 py-2 flex justify-between items-center">
-              <span className="font-bold text-[#333] text-sm">About MacTeX MathEditor</span>
-              <button onClick={() => setShowAbout(false)} className="text-[#666] hover:text-black focus:outline-none">
+              <span className="font-bold text-sm" style={{ color: '#000000' }}>About MacTeX MathEditor</span>
+              <button onClick={() => setShowAbout(false)} className="hover:text-red-600 focus:outline-none" style={{ color: '#000000' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 6L6 18M6 6l12 12" />
                 </svg>
@@ -704,18 +718,15 @@ export default function App() {
             </div>
             
             <div className="p-6 flex flex-col items-center text-center gap-3 bg-white">
-              <div className="w-16 h-16 bg-[#f3e4d6] rounded-xl flex items-center justify-center border border-[#d8b08c] shadow-sm mb-2">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#cc5500" strokeWidth="1.5">
-                  <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9" />
-                  <path d="m8 17 4 4 4-4" />
-                </svg>
+              <div className="w-20 h-20 flex items-center justify-center mb-2">
+                <img src="/logo.png" alt="App Logo" className="w-full h-full object-contain drop-shadow-md rounded-2xl" />
               </div>
-              <h2 className="text-xl font-bold text-[#333]">MacTeX MathEditor</h2>
-              <p className="text-sm text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full">Version 1.0.0</p>
+              <h2 className="text-xl font-bold" style={{ color: '#000000' }}>MacTeX MathEditor</h2>
+              <p className="text-sm font-medium bg-[#f0f0f0] px-4 py-1 rounded-full border border-[#cccccc]" style={{ color: '#000000' }}>Version 0.3.0</p>
               
-              <div className="mt-4 pt-4 border-t border-gray-100 w-full flex flex-col items-center">
-                <p className="text-sm text-gray-600">Created by</p>
-                <p className="text-base font-bold text-[#0055cc] mt-1">K. reaksmey</p>
+              <div className="mt-4 pt-4 border-t border-[#eeeeee] w-full flex flex-col items-center">
+                <p className="text-sm font-semibold" style={{ color: '#000000' }}>Created by</p>
+                <p className="text-base font-bold mt-1" style={{ color: '#0055cc' }}>K. reaksmey</p>
               </div>
             </div>
 
