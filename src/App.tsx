@@ -726,7 +726,7 @@ export default function App() {
               
               <div className="mt-4 pt-4 border-t border-[#eeeeee] w-full flex flex-col items-center">
                 <p className="text-sm font-semibold" style={{ color: '#000000' }}>Created by</p>
-                <p className="text-base font-bold mt-1" style={{ color: '#0055cc' }}>K. reaksmey</p>
+                <p className="text-base font-bold mt-1" style={{ color: '#0055cc' }}>KROT Reaksmey</p>
               </div>
             </div>
 
