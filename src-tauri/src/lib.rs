@@ -263,20 +263,9 @@ on run argv
     
     tell application "Microsoft Word" to activate
     
-    tell application "System Events"
-        set waitCount to 0
-        repeat while not (frontmost of process "Microsoft Word") and waitCount < 50
-            delay 0.1
-            set waitCount to waitCount + 1
-        end repeat
-    end tell
-    
     tell application "Microsoft Word"
         set startPos to start of content of text object of selection
-    end tell
-    
-    tell application "System Events"
-        keystroke "v" using command down
+        paste object text object of selection
     end tell
     
     tell application "Microsoft Word"
@@ -300,7 +289,7 @@ on run argv
                         set shapeHeight to height of theShape
                         set actual_depth to shapeHeight * ratioVal
                         set font position of font object of shapeObj to -actual_depth
-                        set alternative text of theShape to latex_str
+                        set alternative text of theShape to "ratio:" & "{}" & "|latex:" & latex_str
                     on error
                     end try
                 end if
@@ -308,7 +297,7 @@ on run argv
         end if
     end tell
 end run
-        "#, ratio);
+        "#, ratio, ratio);
         
         let output = std::process::Command::new("osascript")
             .arg("-e")
@@ -324,6 +313,215 @@ end run
         }
     }
     Ok(())
+}
+
+#[tauri::command]
+async fn toggle_tex_in_word() -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    {
+        let script = r#"
+            try
+                tell application "Microsoft Word"
+                    set mySel to selection
+                    set selTextObj to text object of mySel
+                    if (count of inline pictures of selTextObj) > 0 then
+                        set theShape to inline picture 1 of selTextObj
+                        set altText to alternative text of theShape
+                        if altText is not missing value then
+                            set latexCode to altText
+                            set AppleScript's text item delimiters to "|latex:"
+                            set parts to text items of altText
+                            if length of parts is greater than 1 then
+                                set latexCode to item 2 of parts
+                            end if
+                            set AppleScript's text item delimiters to ""
+                            
+                            if latexCode is not "" then
+                                delete theShape
+                                type text text latexCode
+                                return "Success: Toggled Image to Text"
+                            end if
+                        end if
+                    end if
+                    
+                    set latexCode to content of text object of mySel
+                    if latexCode is missing value then
+                        set latexCode to ""
+                    end if
+                    
+                    if latexCode is "" then
+                        set origStart to start of content of text object of mySel
+                        
+                        set rng to text object of mySel
+                        set findObj to find object of rng
+                        clear formatting findObj
+                        set forward of findObj to false
+                        set wrap of findObj to find stop
+                        execute find findObj find text "$"
+                        
+                        if found of findObj then
+                            set dollarStart to start of content of rng
+                            
+                            set rng2 to create range active document start origStart end origStart
+                            set findObj2 to find object of rng2
+                            clear formatting findObj2
+                            set forward of findObj2 to true
+                            set wrap of findObj2 to find stop
+                            execute find findObj2 find text "$"
+                            
+                            if found of findObj2 then
+                                set dollarEnd to end of content of rng2
+                                set mySel to create range active document start dollarStart end dollarEnd
+                                select mySel
+                                set latexCode to content of text object of mySel
+                                if latexCode is missing value then
+                                    set latexCode to ""
+                                end if
+                            end if
+                        end if
+                    end if
+                    
+                    if latexCode is not "" then
+                        tell application id "com.heng.mactex-math-editor" to activate
+                        return "SuccessText:" & latexCode
+                    end if
+                    
+                    return "Error: No equation selected. Please select $...$ or click an equation image."
+                end tell
+            on error errMsg
+                return "Error: " & errMsg
+            end try
+        "#;
+        
+        let output = std::process::Command::new("osascript")
+            .arg("-e")
+            .arg(script)
+            .output()
+            .map_err(|e| format!("Failed to execute AppleScript: {}", e))?;
+            
+        if !output.status.success() {
+            let err_str = String::from_utf8_lossy(&output.stderr).to_string();
+            return Err(format!("AppleScript failed: {}", err_str));
+        }
+        
+        let result = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        return Ok(result);
+    }
+    #[cfg(not(target_os = "macos"))]
+    Ok("Success: Not on macOS".into())
+}
+
+#[tauri::command]
+async fn init_batch_compile() -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    {
+        let script = r#"
+            try
+                tell application "Microsoft Word"
+                    set mySel to selection
+                    set rngEnd to create range active document start (end of content of text object of mySel) end (end of content of text object of mySel)
+                    if exists bookmark "MacTexBatchEnd" of active document then
+                        delete bookmark "MacTexBatchEnd" of active document
+                    end if
+                    make new bookmark at active document with properties {name:"MacTexBatchEnd", text object:rngEnd}
+                    collapse range (text object of mySel) direction collapse start
+                    select (text object of mySel)
+                    return "Success"
+                end tell
+            on error errMsg
+                return "Error: " & errMsg
+            end try
+        "#;
+        
+        let output = std::process::Command::new("osascript")
+            .arg("-e").arg(script).output().map_err(|e| format!("Failed: {}", e))?;
+        if !output.status.success() { return Err("AppleScript failed".into()); }
+        return Ok(String::from_utf8_lossy(&output.stdout).trim().to_string());
+    }
+    #[cfg(not(target_os = "macos"))]
+    Ok("Success".into())
+}
+
+#[tauri::command]
+async fn finish_batch_compile() -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    {
+        let script = r#"
+            try
+                tell application "Microsoft Word"
+                    if exists bookmark "MacTexBatchEnd" of active document then
+                        delete bookmark "MacTexBatchEnd" of active document
+                    end if
+                    return "Success"
+                end tell
+            on error errMsg
+                return "Error: " & errMsg
+            end try
+        "#;
+        let _ = std::process::Command::new("osascript").arg("-e").arg(script).output();
+        return Ok("Success".into());
+    }
+    #[cfg(not(target_os = "macos"))]
+    Ok("Success".into())
+}
+
+#[tauri::command]
+async fn find_next_math_in_word() -> Result<String, String> {
+    #[cfg(target_os = "macos")]
+    {
+        let script = r#"
+            try
+                tell application "Microsoft Word"
+                    set mySel to selection
+                    set findObj to find object of text object of mySel
+                    clear formatting findObj
+                    set match wildcards of findObj to true
+                    set forward of findObj to true
+                    set wrap of findObj to find stop
+                    execute find findObj find text "\\$[!$]@\\$"
+                    
+                    if found of findObj then
+                        if exists bookmark "MacTexBatchEnd" of active document then
+                            set foundStart to start of content of text object of mySel
+                            set markStart to start of content of text object of bookmark "MacTexBatchEnd" of active document
+                            if foundStart >= markStart then
+                                delete bookmark "MacTexBatchEnd" of active document
+                                return "DONE"
+                            end if
+                        end if
+                        set foundText to content of text object of mySel
+                        if foundText is missing value then
+                            set foundText to ""
+                        end if
+                        return "SuccessText:" & foundText
+                    end if
+                    
+                    if exists bookmark "MacTexBatchEnd" of active document then
+                        delete bookmark "MacTexBatchEnd" of active document
+                    end if
+                    return "DONE"
+                end tell
+            on error errMsg
+                return "Error: " & errMsg
+            end try
+        "#;
+        
+        let output = std::process::Command::new("osascript")
+            .arg("-e")
+            .arg(script)
+            .output()
+            .map_err(|e| format!("Failed to execute AppleScript: {}", e))?;
+            
+        if !output.status.success() {
+            let err_str = String::from_utf8_lossy(&output.stderr).to_string();
+            return Err(format!("AppleScript failed: {}", err_str));
+        }
+        
+        let result = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        return Ok(result);
+    }
+    #[cfg(not(target_os = "macos"))]
+    Ok("DONE".into())
 }
 
 #[tauri::command]
@@ -492,8 +690,13 @@ pub fn run() {
             copy_to_clipboard,
             insert_into_word,
             align_word_equations,
+            init_batch_compile,
+            finish_batch_compile,
+            find_next_math_in_word,
             open_word,
             check_word_connection,
+            toggle_tex_in_word,
+
             get_tex_paths,
             align_all_word_equations
         ])

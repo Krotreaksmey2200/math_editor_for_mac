@@ -177,7 +177,6 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string>("");
   const [fontSize, setFontSize] = useState<string>("12pt");
   const [baselineEnabled, setBaselineEnabled] = useState<boolean>(true);
-  const [wordConnected, setWordConnected] = useState<boolean>(false);
   const [showAbout, setShowAbout] = useState<boolean>(false);
   const [showCustomSize, setShowCustomSize] = useState<boolean>(false);
   const [customSizeInput, setCustomSizeInput] = useState<string>("12pt");
@@ -230,10 +229,8 @@ export default function App() {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        const isConnected = await invoke<boolean>("check_word_connection");
-        setWordConnected(isConnected);
+        await invoke<string>("check_word_connection");
       } catch (e) {
-        setWordConnected(false);
       }
     };
     
@@ -255,14 +252,17 @@ export default function App() {
     }
   };
 
+  const handleCompileRef = useRef<any>(null);
+
   // Compile using MacTeX TeX Engine
-  const handleCompileAndCopy = async () => {
+  const handleCompileAndCopy = async (inputLatex?: string) => {
+    const latexToUse = inputLatex || latex;
     setIsCompiling(true);
     setCompileError("");
     try {
       // 1. Compile DVI to SVG/PNG
       const result: TeXOutput = await invoke("compile_math", {
-        latex: `\\displaystyle ${latex}`,
+        latex: `\\displaystyle ${latexToUse}`,
         eqType: "inline",
         fontSize: fontSize,
         transparent: true,
@@ -286,7 +286,7 @@ export default function App() {
       const imageBase64 = finalPngBase64;
       
       const depth = result.baseline_depth.toFixed(2);
-      const latexUri = encodeURIComponent(latex);
+      const latexUri = encodeURIComponent(latexToUse);
       
       const ratio = (result.baseline_depth / result.height).toFixed(4);
       const appliedRatio = baselineEnabled ? parseFloat(ratio) : 0.0;
@@ -310,13 +310,13 @@ export default function App() {
         svg: result.svg,
         imageBase64: imageBase64,
         isSvg: isSvg,
-        latex: latex,
+        latex: latexToUse,
         mathml: "", // We could extract MathML from mathlive if needed!
         html: htmlPayload
       });
       
       // 4. Automatically switch to Word and Paste!
-      await invoke("insert_into_word", { latex: latex, isSvg: isSvg, ratio: appliedRatio });
+      await invoke("insert_into_word", { latex: latexToUse, isSvg: isSvg, ratio: appliedRatio });
       
       showToast("Equation copied to Word!");
     } catch (err: any) {
@@ -326,6 +326,67 @@ export default function App() {
       setIsCompiling(false);
     }
   };
+
+  const handleCompileAll = async () => {
+    setIsCompiling(true);
+    setCompileError("");
+    try {
+      await invoke("init_batch_compile");
+      let foundCount = 0;
+      while (true) {
+        showToast(`Processing equation ${foundCount + 1}...`);
+        const res = await invoke<string>("find_next_math_in_word");
+        if (res.startsWith("SuccessText:")) {
+          let text = res.replace("SuccessText:", "");
+          text = text.replace(/^\$+|\$+$/g, '').trim();
+          if (text !== "") {
+            setLatex(text);
+            await handleCompileAndCopy(text);
+            foundCount++;
+            // Add a tiny delay to allow Word to process paste and update selection
+            await new Promise(r => setTimeout(r, 200));
+          }
+        } else {
+          break; // DONE or Error
+        }
+      }
+      if (foundCount > 0) {
+        showToast(`Compiled ${foundCount} equation(s)`);
+      } else {
+        showToast("No equations found in selection.");
+      }
+    } catch (err: any) {
+      showToast("Batch compile error");
+    } finally {
+      await invoke("finish_batch_compile");
+      setIsCompiling(false);
+    }
+  };
+
+  const handleCopyOnlyRef = useRef<any>(null);
+  handleCompileRef.current = handleCompileAndCopy;
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey)) {
+        if (e.key.toLowerCase() === 'c') {
+          if (window.getSelection()?.toString() !== "") return;
+          if (mathFieldRef.current && (mathFieldRef.current as any).selectionIsCollapsed === false) return;
+          e.preventDefault();
+          if (handleCopyOnlyRef.current) {
+            handleCopyOnlyRef.current();
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (handleCompileRef.current) {
+            handleCompileRef.current();
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   const handleCopyOnly = async () => {
     setIsCompiling(true);
@@ -389,6 +450,7 @@ export default function App() {
       setIsCompiling(false);
     }
   };
+  handleCopyOnlyRef.current = handleCopyOnly;
 
   return (
     <div className="flex flex-col h-screen bg-[#ECECEC] font-sans text-black selection:bg-[#B3D7FF] overflow-hidden">
@@ -471,9 +533,12 @@ export default function App() {
           <MenuBarButton label={t[appLang].view} items={[
             { label: t[appLang].refreshWord, action: async () => {
                 try {
-                  const isConnected = await invoke<boolean>("check_word_connection");
-                  setWordConnected(isConnected);
-                  showToast(isConnected ? "Word is connected" : "Word is not connected");
+                  const res = await invoke<string>("check_word_connection");
+                  if (res === "Connected") {
+                    showToast("Word is connected");
+                  } else {
+                    showToast("Word is not connected");
+                  }
                 } catch(e) {
                   showToast("Word is not connected");
                 }
@@ -510,27 +575,42 @@ export default function App() {
         <div className="flex space-x-2 items-center ml-auto mr-2">
           <button
             onClick={async () => {
-              if (!wordConnected) {
-                try {
-                  await invoke("open_word");
-                  showToast("Opening Microsoft Word...");
-                  setTimeout(async () => {
-                    const isConnected = await invoke<boolean>("check_word_connection");
-                    setWordConnected(isConnected);
-                  }, 2000);
-                } catch (e: any) {
-                  showToast("Failed to open Word.");
+              try {
+                showToast("Toggling equation in Word...");
+                const res = await invoke<string>("toggle_tex_in_word");
+                if (res.startsWith("SuccessText:")) {
+                  let text = res.replace("SuccessText:", "");
+                  text = text.replace(/^\$+|\$+$/g, '').trim();
+                  setLatex(text);
+                  await handleCompileAndCopy(text);
+                  showToast("Toggled Text to App");
+                } else if (res.startsWith("Success")) {
+                  showToast(res.replace("Success: ", ""));
+                } else {
+                  showToast(res);
                 }
+              } catch (e: any) {
+                showToast(e.toString());
               }
             }}
-            className={`flex items-center justify-center px-2 h-[20px] rounded text-[10px] font-semibold transition-colors border ${
-              wordConnected 
-                ? 'text-green-600 border-transparent cursor-default'
-                : 'text-red-500 hover:text-red-600 hover:bg-white/50 border-transparent hover:border-[#a3a3a3] cursor-pointer'
-            }`}
-            title={wordConnected ? "Connected to Microsoft Word" : "Click to open and connect to Microsoft Word"}
+            className={`flex items-center justify-center px-2 h-[20px] rounded text-[10px] font-semibold transition-colors border text-blue-600 hover:bg-white/50 border-[#8cb0d8] hover:border-blue-500 cursor-pointer`}
+            title="Toggle Equation in Word"
           >
-            <span>Word</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mr-1">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>Toggle TeX</span>
+          </button>
+          <button
+            onClick={handleCompileAll}
+            disabled={isCompiling}
+            className={`flex items-center justify-center px-2 h-[20px] rounded text-[10px] font-semibold transition-colors border text-purple-600 hover:bg-white/50 border-purple-300 hover:border-purple-500 cursor-pointer disabled:opacity-50`}
+            title="Compile all $...$ equations in Word selection"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mr-1">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143z" />
+            </svg>
+            <span>Compile All</span>
           </button>
         </div>
         <div className="flex space-x-1 items-center">
@@ -575,7 +655,7 @@ export default function App() {
             {t[appLang].copyBtn}
           </button>
           <button 
-            onClick={handleCompileAndCopy}
+            onClick={() => handleCompileAndCopy()}
             disabled={isCompiling}
             className="flex items-center h-[20px] text-[10px] text-[#444] hover:text-black hover:bg-white/50 px-2 rounded border border-transparent hover:border-[#a3a3a3] disabled:opacity-50"
             title="Insert Equation to Word"

@@ -13,8 +13,9 @@ on ToggleApp(paramString)
     try
         tell application "Microsoft Word"
             set mySel to selection
-            if (count of inline pictures of mySel) > 0 then
-                set theShape to inline picture 1 of mySel
+            set selTextObj to text object of mySel
+            if (count of inline pictures of selTextObj) > 0 then
+                set theShape to inline picture 1 of selTextObj
                 set latexCode to alternative text of theShape
                 if latexCode is not "" then
                     delete theShape
