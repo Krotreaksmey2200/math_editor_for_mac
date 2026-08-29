@@ -48,14 +48,15 @@ const svgToPngBase64 = (svgString: string, scale: number = 4): Promise<string> =
 
 type Lang = 'en' | 'km';
 
-const t = {
   en: {
     file: "File", edit: "Edit", view: "View", preamble: "Preamble", style: "Style", size: "Size", pref: "Preferences", help: "Help",
     newEq: "New Equation", copy: "Copy to Clipboard", insert: "Insert to Word",
     refreshWord: "Refresh Word Connection", editPreamble: "Edit Preamble & Engine...",
     enableBaseline: "Enable Baseline Alignment", about: "About MacTeX MathEditor",
     created: "Created by",
-    copyBtn: "Copy to Word", insertBtn: "Insert into Word"
+    copyBtn: "Copy to Word", insertBtn: "Insert into Word",
+    customSizeMenu: "Custom...", customSizeTitle: "Custom Font Size", customSizePrompt: "Enter custom font size (e.g. 16pt, 32pt):",
+    cancel: "Cancel", setSize: "Set Size", defaultText: "(Default)"
   },
   km: {
     file: "ឯកសារ", edit: "កែប្រែ", view: "បង្ហាញ", preamble: "Preamble", style: "រចនាបថ", size: "ទំហំ", pref: "ការកំណត់", help: "ជំនួយ",
@@ -63,7 +64,9 @@ const t = {
     refreshWord: "ភ្ជាប់ Word ឡើងវិញ", editPreamble: "កែសម្រួល Preamble...",
     enableBaseline: "បើកមុខងារតម្រឹមជួរ", about: "អំពី MacTeX MathEditor",
     created: "បង្កើតដោយ",
-    copyBtn: "ចម្លងទៅ Word", insertBtn: "បញ្ចូលទៅ Word"
+    copyBtn: "ចម្លងទៅ Word", insertBtn: "បញ្ចូលទៅ Word",
+    customSizeMenu: "ទំហំផ្សេងៗ...", customSizeTitle: "កំណត់ទំហំអក្សរ", customSizePrompt: "បញ្ចូលទំហំអក្សរ (ឧទាហរណ៍៖ 16pt, 32pt):",
+    cancel: "បោះបង់", setSize: "យល់ព្រម", defaultText: "(ដើម)"
   }
 };
 
@@ -479,11 +482,11 @@ export default function App() {
           <MenuBarButton label={t[appLang].size} items={[
             { label: fontSize === "10pt" ? "✓ 10pt" : "  10pt", action: () => setFontSize("10pt") },
             { label: fontSize === "11pt" ? "✓ 11pt" : "  11pt", action: () => setFontSize("11pt") },
-            { label: fontSize === "12pt" ? "✓ 12pt (Default)" : "  12pt (Default)", action: () => setFontSize("12pt") },
+            { label: fontSize === "12pt" ? `✓ 12pt ${t[appLang].defaultText}` : `  12pt ${t[appLang].defaultText}`, action: () => setFontSize("12pt") },
             { label: fontSize === "14pt" ? "✓ 14pt" : "  14pt", action: () => setFontSize("14pt") },
             { label: fontSize === "18pt" ? "✓ 18pt" : "  18pt", action: () => setFontSize("18pt") },
             { label: fontSize === "24pt" ? "✓ 24pt" : "  24pt", action: () => setFontSize("24pt") },
-            { label: !["10pt","11pt","12pt","14pt","18pt","24pt"].includes(fontSize) ? `✓ Custom... (${fontSize})` : "  Custom...", action: () => { setCustomSizeInput(fontSize); setShowCustomSize(true); } }
+            { label: !["10pt","11pt","12pt","14pt","18pt","24pt"].includes(fontSize) ? `✓ ${t[appLang].customSizeMenu} (${fontSize})` : `  ${t[appLang].customSizeMenu}`, action: () => { setCustomSizeInput(fontSize); setShowCustomSize(true); } }
           ]} />
           <MenuBarButton label={t[appLang].pref} items={[
             { label: baselineEnabled ? `✓ ${t[appLang].enableBaseline}` : `  ${t[appLang].enableBaseline}`, action: () => setBaselineEnabled(!baselineEnabled) }
@@ -800,7 +803,7 @@ export default function App() {
             }}
           >
             <div className="bg-[#dcdcdc] border-b border-[#a3a3a3] px-3 py-2 flex justify-between items-center">
-              <span className="font-bold text-sm" style={{ color: '#000000' }}>Custom Font Size</span>
+              <span className="font-bold text-sm" style={{ color: '#000000' }}>{t[appLang].customSizeTitle}</span>
               <button onClick={() => setShowCustomSize(false)} className="hover:text-red-600 focus:outline-none" style={{ color: '#000000' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 6L6 18M6 6l12 12" />
@@ -809,7 +812,7 @@ export default function App() {
             </div>
             
             <div className="p-4 flex flex-col gap-3 bg-white">
-              <p className="text-[13px] text-gray-700">Enter custom font size (e.g. 16pt, 32pt):</p>
+              <p className="text-[13px] text-gray-700">{t[appLang].customSizePrompt}</p>
               <input 
                 type="text" 
                 value={customSizeInput}
@@ -831,7 +834,7 @@ export default function App() {
                 className="px-4 py-1 bg-white border border-[#a3a3a3] rounded text-sm hover:bg-gray-50 focus:outline-none shadow-sm"
                 style={{ color: '#000000' }}
               >
-                Cancel
+                {t[appLang].cancel}
               </button>
               <button 
                 onClick={() => {
@@ -840,7 +843,7 @@ export default function App() {
                 }} 
                 className="px-4 py-1 bg-[#4a90e2] border border-[#3070b3] rounded text-sm text-white hover:bg-[#357abd] focus:outline-none shadow-sm"
               >
-                Set Size
+                {t[appLang].setSize}
               </button>
             </div>
           </div>
