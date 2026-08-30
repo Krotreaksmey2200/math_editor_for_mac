@@ -23,37 +23,69 @@ End Sub
 
 ' Group 1: សមីការគណិតវិទ្យា (Equations)
 Public Sub OnOpenMathEditorClick(Optional control As Object)
+    On Error GoTo ErrorHandler
     CallAppCommand "new-inline"
+    Exit Sub
+ErrorHandler:
+    MsgBox "មិនអាចបើក MacTeX MathEditor បានទេ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
 Public Sub OnEditEquationClick(Optional control As Object)
+    On Error GoTo ErrorHandler
     EditSelectedEquation
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសពេលកែសម្រួលសមីការ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
 Public Sub OnInlineEqClick(Optional control As Object)
+    On Error GoTo ErrorHandler
     CallAppCommand "new-inline"
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសសមីការក្នុងជួរ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
 Public Sub OnBaselineAlignClick(Optional control As Object)
+    On Error GoTo ErrorHandler
     AlignDocumentEquations
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសតម្រឹមជួរ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
 Public Sub OnDisplayEqClick(Optional control As Object)
+    On Error GoTo ErrorHandler
     CallAppCommand "new-display"
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសសមីការកណ្ដាលបន្ទាត់: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
 Public Sub OnLeftNumberedEqClick(Optional control As Object)
+    On Error GoTo ErrorHandler
     InsertNumberedEquation "left"
     CallAppCommand "new-inline"
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសសមីការលេខរៀងឆ្វេង: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
 Public Sub OnRightNumberedEqClick(Optional control As Object)
+    On Error GoTo ErrorHandler
     InsertNumberedEquation "right"
     CallAppCommand "new-inline"
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសសមីការលេខរៀងស្តាំ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
 Public Sub OnInsertEqNumClick(Optional control As Object)
+    On Error GoTo ErrorHandler
     InsertEquationNumberField
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសបញ្ចូលលេខសមីការ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
 ' Group 2: ជំពូក & ផ្នែក (Chapter & Section Breaks)
@@ -107,7 +139,7 @@ Public Sub OnAutoAlignToggle(Optional control As Object, Optional pressed As Boo
     gAutoAlignEnabled = pressed
     If pressed Then
         MsgBox "បានបើកការតម្រឹមស្វ័យប្រវត្តិ: សមីការនឹងតម្រឹមជួរជម្រៅដោយស្វ័យប្រវត្តិពេលបញ្ចូល។", vbInformation, "MathEditor"
-    If End If
+    End If
 End Sub
 
 ' ------------------------------------------------------------------------------
@@ -273,8 +305,7 @@ Private Sub CallAppCommand(cmd As String)
         If Err.Number <> 0 Then
             Err.Clear
             Dim scpt As String
-            scpt = "tell application ""mactex-math-editor"" to activate" & vbCr & _
-                   "do shell script ""open -a mactex-math-editor; curl -s -X POST http://127.0.0.1:45678/" & cmd & """"
+            scpt = "do shell script ""curl -s -X POST http://127.0.0.1:45678/" & cmd & " || open -a mactex-math-editor || open '/Applications/mactex-math-editor.app' || true"""
             MacScript scpt
         End If
     #End If
@@ -290,8 +321,7 @@ Private Sub SendLatexToServer(encodedLatex As String)
         If Err.Number <> 0 Then
             Err.Clear
             Dim scpt As String
-            scpt = "tell application ""mactex-math-editor"" to activate" & vbCr & _
-                   "do shell script ""open -a mactex-math-editor; curl -s -X POST http://127.0.0.1:45678/edit -H 'Content-Type: application/json' -d '" & jsonPayload & "'"""
+            scpt = "do shell script ""curl -s -X POST http://127.0.0.1:45678/edit -H 'Content-Type: application/json' -d '" & jsonPayload & "' || open -a mactex-math-editor || open '/Applications/mactex-math-editor.app' || true"""
             MacScript scpt
         End If
     #End If

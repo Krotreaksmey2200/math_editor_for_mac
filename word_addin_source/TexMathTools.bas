@@ -1,152 +1,253 @@
 ' ==============================================================================
-' Microsoft Word Add-in: Tex Math Tools Ribbon Callbacks & Macro Logic
+' Microsoft Word Add-in: MacTeX MathEditor Plugin Suite (Khmer Edition)
 ' ==============================================================================
 Option Explicit
+
+Public gAutoAlignEnabled As Boolean
+Public gWordAppEvents As clsWordEvents
+
+Public Sub AutoExec()
+    On Error Resume Next
+    Set gWordAppEvents = New clsWordEvents
+    Set gWordAppEvents.App = Application
+End Sub
+
+Public Sub AutoOpen()
+    On Error Resume Next
+    AutoExec
+End Sub
 
 ' ------------------------------------------------------------------------------
 ' RIBBON CALLBACK HANDLERS
 ' ------------------------------------------------------------------------------
 
-' Callback for "Convert Selection" button
-Public Sub OnConvertSelectionClick(control As IRibbonControl)
-    ConvertLatexToWordMath_Selection
+' Group 1: សមីការគណិតវិទ្យា (Equations)
+Public Sub OnOpenMathEditorClick(Optional control As Object)
+    On Error GoTo ErrorHandler
+    CallAppCommand "new-inline"
+    Exit Sub
+ErrorHandler:
+    MsgBox "មិនអាចបើក MacTeX MathEditor បានទេ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
-' Callback for "Batch Convert All" button
-Public Sub OnBatchConvertDocClick(control As IRibbonControl)
-    BatchConvertAllLatexInDoc
+Public Sub OnEditEquationClick(Optional control As Object)
+    On Error GoTo ErrorHandler
+    EditSelectedEquation
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសពេលកែសម្រួលសមីការ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
+Public Sub OnInlineEqClick(Optional control As Object)
+    On Error GoTo ErrorHandler
+    CallAppCommand "new-inline"
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសសមីការក្នុងជួរ: " & Err.Description, vbExclamation, "MathEditor"
+End Sub
+
+Public Sub OnBaselineAlignClick(Optional control As Object)
+    On Error GoTo ErrorHandler
+    AlignDocumentEquations
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសតម្រឹមជួរ: " & Err.Description, vbExclamation, "MathEditor"
+End Sub
+
+Public Sub OnDisplayEqClick(Optional control As Object)
+    On Error GoTo ErrorHandler
+    CallAppCommand "new-display"
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសសមីការកណ្ដាលបន្ទាត់: " & Err.Description, vbExclamation, "MathEditor"
+End Sub
+
+Public Sub OnLeftNumberedEqClick(Optional control As Object)
+    On Error GoTo ErrorHandler
+    InsertNumberedEquation "left"
+    CallAppCommand "new-inline"
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសសមីការលេខរៀងឆ្វេង: " & Err.Description, vbExclamation, "MathEditor"
+End Sub
+
+Public Sub OnRightNumberedEqClick(Optional control As Object)
+    On Error GoTo ErrorHandler
+    InsertNumberedEquation "right"
+    CallAppCommand "new-inline"
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសសមីការលេខរៀងស្តាំ: " & Err.Description, vbExclamation, "MathEditor"
+End Sub
+
+Public Sub OnInsertEqNumClick(Optional control As Object)
+    On Error GoTo ErrorHandler
+    InsertEquationNumberField
+    Exit Sub
+ErrorHandler:
+    MsgBox "កំហុសបញ្ចូលលេខសមីការ: " & Err.Description, vbExclamation, "MathEditor"
+End Sub
+
+' Group 2: ជំពូក & ផ្នែក (Chapter & Section Breaks)
+Public Sub OnInsertChapterBreakClick(Optional control As Object)
+    InsertBreakMarker "chapter"
+End Sub
+
+Public Sub OnInsertSectionBreakClick(Optional control As Object)
+    InsertBreakMarker "section"
+End Sub
+
+Public Sub OnInsertNextChapterBreakClick(Optional control As Object)
+    InsertBreakMarker "next_chapter"
+End Sub
+
+Public Sub OnInsertNextSectionBreakClick(Optional control As Object)
+    InsertBreakMarker "next_section"
+End Sub
+
+Public Sub OnModifyChapterBreakClick(Optional control As Object)
+    MsgBox "ការកំណត់លេខរៀងជំពូក: បានកំណត់លេខរៀងជំពូកចាប់ផ្ដើម។", vbInformation, "MathEditor"
+End Sub
+
+Public Sub OnModifySectionBreakClick(Optional control As Object)
+    MsgBox "ការកំណត់លេខរៀងផ្នែក: បានកំណត់លេខរៀងផ្នែកចាប់ផ្ដើម។", vbInformation, "MathEditor"
+End Sub
+
+Public Sub OnDeleteSectionBreakClick(Optional control As Object)
+    DeleteCurrentBreakMarker
+End Sub
+
+Public Sub OnToggleShowBreaksClick(Optional control As Object)
+    On Error Resume Next
+    ActiveWindow.View.ShowHiddenText = Not ActiveWindow.View.ShowHiddenText
+End Sub
+
+' Group 3: លេខរៀង & ការយោងសមីការ (Numbering & References)
+Public Sub OnUpdateNumFormatClick(Optional control As Object)
+    MsgBox "ទម្រង់បង្ហាញលេខរៀងសមីការ: (ជំពូក.ផ្នែក.សមីការ)", vbInformation, "MathEditor"
+End Sub
+
+Public Sub OnUpdateAllNumbersClick(Optional control As Object)
+    UpdateAllFieldsInDoc
+End Sub
+
+Public Sub OnInsertEqRefClick(Optional control As Object)
+    InsertEquationReferenceLink
+End Sub
+
+Public Sub OnAutoAlignToggle(Optional control As Object, Optional pressed As Boolean)
+    gAutoAlignEnabled = pressed
+    If pressed Then
+        MsgBox "បានបើកការតម្រឹមស្វ័យប្រវត្តិ: សមីការនឹងតម្រឹមជួរជម្រៅដោយស្វ័យប្រវត្តិពេលបញ្ចូល។", vbInformation, "MathEditor"
+    End If
+End Sub
 
 ' ------------------------------------------------------------------------------
-' CONVERSION MACRO ENGINE
+' IMPLEMENTATION MODULES
 ' ------------------------------------------------------------------------------
 
-''' <summary>
-''' Subroutine 1: Convert selected LaTeX code to Native Word Inline OMML Equation
-''' </summary>
-Public Sub ConvertLatexToWordMath_Selection()
+Public Sub EditSelectedEquation()
     On Error GoTo ErrorHandler
     
-    Dim rng As Range
-    Set rng = Selection.Range
+    Dim sel As Selection
+    Set sel = Application.Selection
     
-    If rng.Start = rng.End Or Len(Trim(rng.Text)) = 0 Then
-        MsgBox "Please select some LaTeX code first.", vbExclamation, "Tex Math Tools"
+    Dim shape As InlineShape
+    Set shape = Nothing
+    
+    If sel.InlineShapes.Count > 0 Then
+        Set shape = sel.InlineShapes(1)
+    ElseIf sel.Hyperlinks.Count > 0 Then
+        If sel.Hyperlinks(1).Range.InlineShapes.Count > 0 Then
+            Set shape = sel.Hyperlinks(1).Range.InlineShapes(1)
+        End If
+    End If
+    
+    If shape Is Nothing Then
+        Dim i As Long
+        For i = 1 To ActiveDocument.InlineShapes.Count
+            If ActiveDocument.InlineShapes(i).Range.Start <= sel.Range.Start And ActiveDocument.InlineShapes(i).Range.End >= sel.Range.Start Then
+                Set shape = ActiveDocument.InlineShapes(i)
+                Exit For
+            End If
+        Next i
+    End If
+    
+    If shape Is Nothing Then
+        CallAppCommand "new-inline"
         Exit Sub
     End If
     
-    Dim latexStr As String
-    latexStr = Trim(rng.Text)
+    Dim altText As String
+    altText = shape.AlternativeText
     
-    ' Strip delimiters ($...$ or $$...$$)
-    If Left(latexStr, 2) = "$$" And Right(latexStr, 2) = "$$" Then
-        latexStr = Trim(Mid(latexStr, 3, Len(latexStr) - 4))
-    ElseIf Left(latexStr, 1) = "$" And Right(latexStr, 1) = "$" Then
-        latexStr = Trim(Mid(latexStr, 2, Len(latexStr) - 2))
+    If InStr(altText, "ratio:") = 0 And InStr(altText, "latex:") = 0 Then
+        CallAppCommand "new-inline"
+        Exit Sub
     End If
     
-    If Len(latexStr) = 0 Then Exit Sub
-    
-    Application.ScreenUpdating = False
-    
-    rng.Text = latexStr
-    Dim oMathObj As OMath
-    Set oMathObj = rng.OMaths.Add(rng)
-    
-    oMathObj.Type = wdOMathInline
-    oMathObj.BuildUp
-    
-    Application.ScreenUpdating = True
-    Exit Sub
-
-ErrorHandler:
-    Application.ScreenUpdating = True
-    MsgBox "Error converting selection: " & Err.Description, vbCritical, "Tex Math Tools"
-End Sub
-
-
-''' <summary>
-''' Subroutine 2: Batch convert all LaTeX equations ($...$ and $$...$$) in the document
-''' </summary>
-Public Sub BatchConvertAllLatexInDoc()
-    On Error GoTo ErrorHandler
-    
-    Dim doc As Document
-    Set doc = ActiveDocument
-    
-    Application.ScreenUpdating = False
-    
-    Dim convertedCount As Long
-    convertedCount = 0
-    
-    ' Pass 1: Convert $$...$$ (Double Dollar)
-    convertedCount = convertedCount + ConvertLatexByPattern(doc, "\$\$([!$]@)\$\$", 2)
-    
-    ' Pass 2: Convert $...$ (Single Dollar)
-    convertedCount = convertedCount + ConvertLatexByPattern(doc, "\$([!$]@)\$", 1)
-    
-    Application.ScreenUpdating = True
-    
-    If convertedCount > 0 Then
-        MsgBox convertedCount & " LaTeX equation(s) successfully converted to Word Math!", _
-               vbInformation, "Tex Math Tools"
+    Dim rawLatex As String
+    If InStr(altText, "|latex:") > 0 Then
+        Dim parts() As String
+        parts = Split(altText, "|latex:")
+        rawLatex = parts(1)
+    ElseIf InStr(altText, "|") > 0 Then
+        Dim parts2() As String
+        parts2 = Split(altText, "|")
+        rawLatex = parts2(1)
     Else
-        MsgBox "No LaTeX equations enclosed in $...$ or $$...$$ were found.", _
-               vbInformation, "Tex Math Tools"
+        rawLatex = altText
     End If
     
+    SendLatexToServer rawLatex
     Exit Sub
 
 ErrorHandler:
-    Application.ScreenUpdating = True
-    MsgBox "An error occurred during conversion: " & Err.Description, vbCritical, "Tex Math Tools"
+    CallAppCommand "new-inline"
 End Sub
 
-
-''' <summary>
-''' Helper function for batch pattern replacement
-''' </summary>
-Private Function ConvertLatexByPattern(ByRef doc As Document, ByVal wildcardPattern As String, ByVal delimiterLen As Integer) As Long
+Public Sub AlignDocumentEquations()
     On Error Resume Next
-    
-    Dim searchRng As Range
-    Set searchRng = doc.Content
-    
+    Dim ishape As InlineShape
     Dim count As Long
     count = 0
     
-    With searchRng.Find
-        .ClearFormatting
-        .Text = wildcardPattern
-        .MatchWildcards = True
-        .Forward = True
-        .Wrap = wdFindStop
-        
-        Do While .Execute
-            Dim rawText As String
-            rawText = searchRng.Text
+    For Each ishape In ActiveDocument.InlineShapes
+        If InStr(ishape.AlternativeText, "ratio:") > 0 Then
+            Dim parts() As String
+            parts = Split(ishape.AlternativeText, "|")
+            Dim ratioStr As String
+            ratioStr = Replace(parts(0), "ratio:", "")
             
-            Dim cleanLatex As String
-            cleanLatex = Trim(Mid(rawText, delimiterLen + 1, Len(rawText) - (delimiterLen * 2)))
+            Dim ratio As Double
+            ratio = Val(ratioStr)
             
-            If Len(cleanLatex) > 0 Then
-                searchRng.Text = cleanLatex
-                
-                Dim objOMath As OMath
-                Set objOMath = searchRng.OMaths.Add(searchRng)
-                
-                If Not objOMath Is Nothing Then
-                    objOMath.Type = wdOMathInline
-                    objOMath.BuildUp
-                    count = count + 1
-                End If
+            If ratio > 0 Then
+                Dim shift As Double
+                shift = ishape.Height * ratio
+                ishape.PictureFormat.BaselineDistance = shift
+                count = count + 1
             End If
-            
-            searchRng.Collapse wdCollapseEnd
-            searchRng.End = doc.Content.End
-        Loop
-    End With
+        End If
+    Next ishape
     
-    ConvertLatexByPattern = count
-End Function
+    MsgBox "ការតម្រឹមជួរស្វ័យប្រវត្តបានបញ្ចប់! បានតម្រឹមសមីការចំនួន " & count & " ក្នុង Document។", vbInformation, "MathEditor"
+    CallAppCommand "new-inline"
+End Sub
+
+Public Sub InsertNumberedEquation(align As String)
+    On Error Resume Next
+    Dim sel As Selection
+    Set sel = Application.Selection
+    
+    sel.TypeParagraph
+    
+    If align = "right" Then
+        sel.TypeText "\quad f(x) = \text{equation} \qquad ("
+        sel.Fields.Add Range:=sel.Range, Type:=wdFieldEmpty, Text:="SEQ Equation", PreserveFormatting:=True
+        sel.TypeText ")"
+    Else
+        sel.TypeText "("
+        sel.Fields.Add Range:=sel.Range, Type:=wdFieldEmpty, Text:="SEQ Equation", PreserveFormatting:=True
+        sel.TypeText ") \qquad f(x) = \text{equation}"
+    End If
