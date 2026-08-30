@@ -18,86 +18,86 @@ Public Sub AutoOpen()
 End Sub
 
 ' ------------------------------------------------------------------------------
-' RIBBON CALLBACK HANDLERS
+' RIBBON CALLBACK HANDLERS (Using Optional control As Object for macOS compatibility)
 ' ------------------------------------------------------------------------------
 
 ' Group 1: Equations
-Public Sub OnEditEquationClick(control As IRibbonControl)
+Public Sub OnEditEquationClick(Optional control As Object)
     EditSelectedEquation
 End Sub
 
-Public Sub OnInlineEqClick(control As IRibbonControl)
+Public Sub OnInlineEqClick(Optional control As Object)
     CallAppCommand "new-inline"
 End Sub
 
-Public Sub OnBaselineAlignClick(control As IRibbonControl)
+Public Sub OnBaselineAlignClick(Optional control As Object)
     AlignDocumentEquations
 End Sub
 
-Public Sub OnDisplayEqClick(control As IRibbonControl)
+Public Sub OnDisplayEqClick(Optional control As Object)
     CallAppCommand "new-display"
 End Sub
 
-Public Sub OnLeftNumberedEqClick(control As IRibbonControl)
+Public Sub OnLeftNumberedEqClick(Optional control As Object)
     InsertNumberedEquation "left"
 End Sub
 
-Public Sub OnRightNumberedEqClick(control As IRibbonControl)
+Public Sub OnRightNumberedEqClick(Optional control As Object)
     InsertNumberedEquation "right"
 End Sub
 
-Public Sub OnInsertEqNumClick(control As IRibbonControl)
+Public Sub OnInsertEqNumClick(Optional control As Object)
     InsertEquationNumberField
 End Sub
 
 ' Group 2: Chapter & Section Breaks
-Public Sub OnInsertChapterBreakClick(control As IRibbonControl)
+Public Sub OnInsertChapterBreakClick(Optional control As Object)
     InsertBreakMarker "chapter"
 End Sub
 
-Public Sub OnInsertSectionBreakClick(control As IRibbonControl)
+Public Sub OnInsertSectionBreakClick(Optional control As Object)
     InsertBreakMarker "section"
 End Sub
 
-Public Sub OnInsertNextChapterBreakClick(control As IRibbonControl)
+Public Sub OnInsertNextChapterBreakClick(Optional control As Object)
     InsertBreakMarker "next_chapter"
 End Sub
 
-Public Sub OnInsertNextSectionBreakClick(control As IRibbonControl)
+Public Sub OnInsertNextSectionBreakClick(Optional control As Object)
     InsertBreakMarker "next_section"
 End Sub
 
-Public Sub OnModifyChapterBreakClick(control As IRibbonControl)
+Public Sub OnModifyChapterBreakClick(Optional control As Object)
     MsgBox "Chapter Break Configuration: Set starting chapter number.", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnModifySectionBreakClick(control As IRibbonControl)
+Public Sub OnModifySectionBreakClick(Optional control As Object)
     MsgBox "Section Break Configuration: Set starting section number.", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnDeleteSectionBreakClick(control As IRibbonControl)
+Public Sub OnDeleteSectionBreakClick(Optional control As Object)
     DeleteCurrentBreakMarker
 End Sub
 
-Public Sub OnToggleShowBreaksClick(control As IRibbonControl)
+Public Sub OnToggleShowBreaksClick(Optional control As Object)
     On Error Resume Next
     ActiveWindow.View.ShowHiddenText = Not ActiveWindow.View.ShowHiddenText
 End Sub
 
 ' Group 3: Equation Numbering & References
-Public Sub OnUpdateNumFormatClick(control As IRibbonControl)
+Public Sub OnUpdateNumFormatClick(Optional control As Object)
     MsgBox "Equation Number Format: (Chapter.Section.Equation)", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnUpdateAllNumbersClick(control As IRibbonControl)
+Public Sub OnUpdateAllNumbersClick(Optional control As Object)
     UpdateAllFieldsInDoc
 End Sub
 
-Public Sub OnInsertEqRefClick(control As IRibbonControl)
+Public Sub OnInsertEqRefClick(Optional control As Object)
     InsertEquationReferenceLink
 End Sub
 
-Public Sub OnAutoAlignToggle(control As IRibbonControl, pressed As Boolean)
+Public Sub OnAutoAlignToggle(Optional control As Object, Optional pressed As Boolean)
     gAutoAlignEnabled = pressed
     If pressed Then
         MsgBox "Auto-Align Enabled: Equations will automatically adjust baseline depth on insertion.", vbInformation, "MathEditor"
@@ -259,19 +259,36 @@ Public Sub InsertEquationReferenceLink()
 End Sub
 
 Private Sub CallAppCommand(cmd As String)
-    Dim script As String
-    script = "do shell script ""curl -X POST http://127.0.0.1:45678/" & cmd & """"
-    MacScript (script)
+    On Error GoTo Fallback
+    #If Mac Then
+        AppleScriptTask "MacTeXMathEditor.scpt", "CallAppCommand", cmd
+    #Else
+        ' Windows fallback
+    #End If
+    Exit Sub
+
+Fallback:
+    On Error Resume Next
+    MacScript ("do shell script ""curl -X POST http://127.0.0.1:45678/" & cmd & """")
 End Sub
 
 Private Sub SendLatexToServer(encodedLatex As String)
-    Dim appleScriptCode As String
+    On Error GoTo Fallback
     Dim jsonPayload As String
-    
     jsonPayload = "{""latex"": """ & encodedLatex & """}"
+    
+    #If Mac Then
+        AppleScriptTask "MacTeXMathEditor.scpt", "SendLatexToEditor", jsonPayload
+    #Else
+        ' Windows fallback
+    #End If
+    Exit Sub
+
+Fallback:
+    On Error Resume Next
+    Dim appleScriptCode As String
     appleScriptCode = "do shell script ""curl -X POST http://127.0.0.1:45678/edit " & _
                       "-H 'Content-Type: application/json' " & _
                       "-d '" & jsonPayload & "'"""
-                      
     MacScript (appleScriptCode)
 End Sub
