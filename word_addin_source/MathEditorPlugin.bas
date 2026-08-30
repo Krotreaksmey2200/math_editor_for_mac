@@ -102,7 +102,7 @@ Public Sub EditSelectedEquation()
     Dim sel As Selection
     Set sel = Application.Selection
     
-    If sel.Type <> wdSelectionInlineShape Then
+    If sel.InlineShapes.Count = 0 Then
         MsgBox "Please select a MathEditor equation image to edit.", vbExclamation, "MathEditor"
         Exit Sub
     End If
@@ -113,16 +113,23 @@ Public Sub EditSelectedEquation()
     Dim altText As String
     altText = shape.AlternativeText
     
-    If InStr(altText, "ratio:") = 0 Or InStr(altText, "|") = 0 Then
+    If InStr(altText, "ratio:") = 0 And InStr(altText, "latex:") = 0 Then
         MsgBox "The selected image is not a valid MathEditor equation.", vbExclamation, "MathEditor"
         Exit Sub
     End If
     
-    Dim parts() As String
-    parts = Split(altText, "|")
-    
     Dim rawLatex As String
-    rawLatex = parts(1)
+    If InStr(altText, "|latex:") > 0 Then
+        Dim parts() As String
+        parts = Split(altText, "|latex:")
+        rawLatex = parts(1)
+    ElseIf InStr(altText, "|") > 0 Then
+        Dim parts2() As String
+        parts2 = Split(altText, "|")
+        rawLatex = parts2(1)
+    Else
+        rawLatex = altText
+    End If
     
     SendLatexToServer rawLatex
     Exit Sub
