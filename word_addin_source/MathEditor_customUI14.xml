@@ -1,17 +1,15 @@
 <customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
   <ribbon>
     <tabs>
-      <tab id="tabMacTex" label="MacTeX">
-        <group id="grpMathEditor" label="MathEditor">
-          
-          <button id="btnEditEquation" 
-                  label="Edit Equation" 
-                  imageMso="EquationInsert" 
+      <tab id="tabMathEditor" label="MathEditor">
+        <group id="grpEquations" label="MacTeX MathEditor">
+          <button id="btnOpenMathEditor" 
+                  label="បើក MacTeX MathEditor" 
+                  imageMso="EquationOptions" 
                   size="large" 
-                  onAction="OnEditEquationClick" 
-                  screentip="Edit Selected Equation" 
-                  supertip="Opens the selected MacTeX equation in MathEditor." />
-                  
+                  onAction="OnOpenMathEditorClick" 
+                  screentip="បើក MacTeX MathEditor" 
+                  supertip="បើកផ្ទាំងកម្មវិធី MacTeX MathEditor មកប្រើប្រាស់ផ្ទាល់" />
         </group>
       </tab>
     </tabs>
