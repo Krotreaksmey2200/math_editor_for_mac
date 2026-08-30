@@ -22,84 +22,84 @@ End Sub
 ' ------------------------------------------------------------------------------
 
 ' Group 1: សមីការគណិតវិទ្យា (Equations)
-Public Sub OnEditEquationClick(control As IRibbonControl)
+Public Sub OnEditEquationClick(Optional control As Object)
     EditSelectedEquation
 End Sub
 
-Public Sub OnInlineEqClick(control As IRibbonControl)
+Public Sub OnInlineEqClick(Optional control As Object)
     CallAppCommand "new-inline"
 End Sub
 
-Public Sub OnBaselineAlignClick(control As IRibbonControl)
+Public Sub OnBaselineAlignClick(Optional control As Object)
     AlignDocumentEquations
 End Sub
 
-Public Sub OnDisplayEqClick(control As IRibbonControl)
+Public Sub OnDisplayEqClick(Optional control As Object)
     CallAppCommand "new-display"
 End Sub
 
-Public Sub OnLeftNumberedEqClick(control As IRibbonControl)
+Public Sub OnLeftNumberedEqClick(Optional control As Object)
     InsertNumberedEquation "left"
     CallAppCommand "new-inline"
 End Sub
 
-Public Sub OnRightNumberedEqClick(control As IRibbonControl)
+Public Sub OnRightNumberedEqClick(Optional control As Object)
     InsertNumberedEquation "right"
     CallAppCommand "new-inline"
 End Sub
 
-Public Sub OnInsertEqNumClick(control As IRibbonControl)
+Public Sub OnInsertEqNumClick(Optional control As Object)
     InsertEquationNumberField
 End Sub
 
 ' Group 2: ជំពូក & ផ្នែក (Chapter & Section Breaks)
-Public Sub OnInsertChapterBreakClick(control As IRibbonControl)
+Public Sub OnInsertChapterBreakClick(Optional control As Object)
     InsertBreakMarker "chapter"
 End Sub
 
-Public Sub OnInsertSectionBreakClick(control As IRibbonControl)
+Public Sub OnInsertSectionBreakClick(Optional control As Object)
     InsertBreakMarker "section"
 End Sub
 
-Public Sub OnInsertNextChapterBreakClick(control As IRibbonControl)
+Public Sub OnInsertNextChapterBreakClick(Optional control As Object)
     InsertBreakMarker "next_chapter"
 End Sub
 
-Public Sub OnInsertNextSectionBreakClick(control As IRibbonControl)
+Public Sub OnInsertNextSectionBreakClick(Optional control As Object)
     InsertBreakMarker "next_section"
 End Sub
 
-Public Sub OnModifyChapterBreakClick(control As IRibbonControl)
+Public Sub OnModifyChapterBreakClick(Optional control As Object)
     MsgBox "ការកំណត់លេខរៀងជំពូក: បានកំណត់លេខរៀងជំពូកចាប់ផ្ដើម។", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnModifySectionBreakClick(control As IRibbonControl)
+Public Sub OnModifySectionBreakClick(Optional control As Object)
     MsgBox "ការកំណត់លេខរៀងផ្នែក: បានកំណត់លេខរៀងផ្នែកចាប់ផ្ដើម។", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnDeleteSectionBreakClick(control As IRibbonControl)
+Public Sub OnDeleteSectionBreakClick(Optional control As Object)
     DeleteCurrentBreakMarker
 End Sub
 
-Public Sub OnToggleShowBreaksClick(control As IRibbonControl)
+Public Sub OnToggleShowBreaksClick(Optional control As Object)
     On Error Resume Next
     ActiveWindow.View.ShowHiddenText = Not ActiveWindow.View.ShowHiddenText
 End Sub
 
 ' Group 3: លេខរៀង & ការយោងសមីការ (Numbering & References)
-Public Sub OnUpdateNumFormatClick(control As IRibbonControl)
+Public Sub OnUpdateNumFormatClick(Optional control As Object)
     MsgBox "ទម្រង់បង្ហាញលេខរៀងសមីការ: (ជំពូក.ផ្នែក.សមីការ)", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnUpdateAllNumbersClick(control As IRibbonControl)
+Public Sub OnUpdateAllNumbersClick(Optional control As Object)
     UpdateAllFieldsInDoc
 End Sub
 
-Public Sub OnInsertEqRefClick(control As IRibbonControl)
+Public Sub OnInsertEqRefClick(Optional control As Object)
     InsertEquationReferenceLink
 End Sub
 
-Public Sub OnAutoAlignToggle(control As IRibbonControl, pressed As Boolean)
+Public Sub OnAutoAlignToggle(Optional control As Object, Optional pressed As Boolean)
     gAutoAlignEnabled = pressed
     If pressed Then
         MsgBox "បានបើកការតម្រឹមស្វ័យប្រវត្តិ: សមីការនឹងតម្រឹមជួរជម្រៅដោយស្វ័យប្រវត្តិពេលបញ្ចូល។", vbInformation, "MathEditor"
