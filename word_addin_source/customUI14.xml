@@ -1,28 +1,167 @@
 <customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui">
   <ribbon>
     <tabs>
-      <tab id="tabTexMathTools" label="Tex Math Tools">
-        <group id="grpTexConverter" label="LaTeX Converter">
-          
-          <!-- Convert Selection Button -->
-          <button id="btnConvertSelection" 
-                  label="Convert Selection" 
+      <tab id="tabMathEditor" label="MathEditor">
+        
+        <!-- Group 1: Equations & Alignment -->
+        <group id="grpEquations" label="Equations">
+          <button id="btnEditEquation" 
+                  label="Edit Equation" 
                   imageMso="EquationInsert" 
                   size="large" 
-                  onAction="OnConvertSelectionClick" 
-                  screentip="Convert Selection" 
-                  supertip="Converts the currently selected LaTeX code ($...$ or $$...$$) into a native Word inline OMML equation." />
+                  onAction="OnEditEquationClick" 
+                  screentip="Edit Equation" 
+                  supertip="Opens the selected equation image back inside MacTeX MathEditor." />
                   
-          <!-- Batch Convert All Button -->
-          <button id="btnBatchConvertDoc" 
-                  label="Batch Convert All" 
-                  imageMso="EquationOptions" 
-                  size="large" 
-                  onAction="OnBatchConvertDocClick" 
-                  screentip="Batch Convert Document" 
-                  supertip="Scans the entire active document, finds all $...$ and $$...$$ LaTeX math code, and converts them to native Word OMML equations." />
+          <button id="btnInlineEquation" 
+                  label="Inline Equation" 
+                  imageMso="EquationProfessional" 
+                  size="normal" 
+                  onAction="OnInlineEqClick" 
+                  screentip="Inline Equation" 
+                  supertip="Inserts a new inline MathEditor equation at the cursor position." />
                   
+          <button id="btnBaselineAlignment" 
+                  label="Baseline Alignment" 
+                  imageMso="AlignVerticalCenter" 
+                  size="normal" 
+                  onAction="OnBaselineAlignClick" 
+                  screentip="Baseline Alignment" 
+                  supertip="Re-aligns the vertical baseline depth for all inline math equations in the document." />
+                  
+          <button id="btnDisplayEquation" 
+                  label="Display Equation" 
+                  imageMso="EquationLinear" 
+                  size="normal" 
+                  onAction="OnDisplayEqClick" 
+                  screentip="Display Equation" 
+                  supertip="Inserts a centered display equation on its own paragraph." />
+                  
+          <button id="btnLeftNumberedEq" 
+                  label="Left Numbered Equation" 
+                  imageMso="Numbering" 
+                  size="normal" 
+                  onAction="OnLeftNumberedEqClick" 
+                  screentip="Left Numbered Equation" 
+                  supertip="Inserts an equation with a left-aligned equation number (e.g. (1.1))." />
+                  
+          <button id="btnRightNumberedEq" 
+                  label="Right Numbered Equation" 
+                  imageMso="Numbering" 
+                  size="normal" 
+                  onAction="OnRightNumberedEqClick" 
+                  screentip="Right Numbered Equation" 
+                  supertip="Inserts an equation with a right-aligned equation number (e.g. (1.1))." />
+                  
+          <button id="btnInsertEqNumber" 
+                  label="Insert Equation Number" 
+                  imageMso="InsertField" 
+                  size="normal" 
+                  onAction="OnInsertEqNumClick" 
+                  screentip="Insert Equation Number" 
+                  supertip="Inserts a dynamic equation number field at cursor." />
         </group>
+
+        <!-- Group 2: Chapter & Section Breaks -->
+        <group id="grpChapterSection" label="Chapter &amp; Section Breaks">
+          <button id="btnInsertChapterBreak" 
+                  label="Insert Chapter Break" 
+                  imageMso="SectionInsert" 
+                  size="normal" 
+                  onAction="OnInsertChapterBreakClick" 
+                  screentip="Insert Chapter Break" 
+                  supertip="Inserts a chapter break marker for equation numbering." />
+                  
+          <button id="btnInsertSectionBreak" 
+                  label="Insert Section Break" 
+                  imageMso="PageBreakInsert" 
+                  size="normal" 
+                  onAction="OnInsertSectionBreakClick" 
+                  screentip="Insert Section Break" 
+                  supertip="Inserts a section break marker for equation numbering." />
+                  
+          <button id="btnInsertNextChapterBreak" 
+                  label="Insert Next Chapter Break" 
+                  imageMso="GoToNextHeader" 
+                  size="normal" 
+                  onAction="OnInsertNextChapterBreakClick" 
+                  screentip="Insert Next Chapter Break" 
+                  supertip="Advances to the next chapter number." />
+                  
+          <button id="btnInsertNextSectionBreak" 
+                  label="Insert Next Section Break" 
+                  imageMso="GoToNextHeader" 
+                  size="normal" 
+                  onAction="OnInsertNextSectionBreakClick" 
+                  screentip="Insert Next Section Break" 
+                  supertip="Advances to the next section number." />
+                  
+          <button id="btnModifyChapterBreak" 
+                  label="Modify Chapter Break" 
+                  imageMso="Properties" 
+                  size="normal" 
+                  onAction="OnModifyChapterBreakClick" 
+                  screentip="Modify Chapter Break" 
+                  supertip="Changes chapter break settings." />
+                  
+          <button id="btnModifySectionBreak" 
+                  label="Modify Section Break" 
+                  imageMso="Properties" 
+                  size="normal" 
+                  onAction="OnModifySectionBreakClick" 
+                  screentip="Modify Section Break" 
+                  supertip="Changes section break settings." />
+                  
+          <button id="btnDeleteSectionBreak" 
+                  label="Delete Section Break" 
+                  imageMso="Delete" 
+                  size="normal" 
+                  onAction="OnDeleteSectionBreakClick" 
+                  screentip="Delete Section Break" 
+                  supertip="Removes selected section break marker." />
+                  
+          <button id="btnShowHideBreaks" 
+                  label="Show / Hide Breaks" 
+                  imageMso="ShowAll" 
+                  size="normal" 
+                  onAction="OnToggleShowBreaksClick" 
+                  screentip="Show / Hide Breaks" 
+                  supertip="Toggles visibility of chapter and section break markers." />
+        </group>
+
+        <!-- Group 3: Equation Numbering & References -->
+        <group id="grpNumberingRef" label="Equation Numbering &amp; References">
+          <button id="btnUpdateNumFormat" 
+                  label="Update Equation Number Format" 
+                  imageMso="NumberingFormatDialog" 
+                  size="normal" 
+                  onAction="OnUpdateNumFormatClick" 
+                  screentip="Update Number Format" 
+                  supertip="Customizes the format of equation numbers (e.g. (1.1), Eq. 1.1)." />
+                  
+          <button id="btnUpdateAllNumbers" 
+                  label="Update Equation Numbers" 
+                  imageMso="FieldsUpdate" 
+                  size="large" 
+                  onAction="OnUpdateAllNumbersClick" 
+                  screentip="Update All Equation Numbers" 
+                  supertip="Re-scans document and updates all equation numbers consecutively across chapters." />
+                  
+          <button id="btnInsertEqRef" 
+                  label="Equation Reference" 
+                  imageMso="CrossReference" 
+                  size="large" 
+                  onAction="OnInsertEqRefClick" 
+                  screentip="Equation Reference" 
+                  supertip="Inserts a cross-reference link to a numbered equation." />
+                  
+          <checkBox id="chkAutoAlign" 
+                    label="Auto Align" 
+                    onAction="OnAutoAlignToggle" 
+                    screentip="Auto Align" 
+                    supertip="Automatically aligns equation baseline upon insertion." />
+        </group>
+
       </tab>
     </tabs>
   </ribbon>
