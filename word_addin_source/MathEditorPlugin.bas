@@ -262,36 +262,33 @@ Public Sub InsertEquationReferenceLink()
 End Sub
 
 Private Sub CallAppCommand(cmd As String)
-    On Error GoTo Fallback
-    #If Mac Then
-        AppleScriptTask "MacTeXMathEditor.scpt", "CallAppCommand", cmd
-    #Else
-        ' Windows fallback
-    #End If
-    Exit Sub
-
-Fallback:
     On Error Resume Next
-    MacScript "do shell script ""curl -s -X POST http://127.0.0.1:45678/" & cmd & """"
+    #If Mac Then
+        Dim res As String
+        res = AppleScriptTask("MacTeXMathEditor.scpt", "CallAppCommand", cmd)
+        If Err.Number <> 0 Then
+            Err.Clear
+            Dim scpt As String
+            scpt = "tell application ""mactex-math-editor"" to activate" & vbCr & _
+                   "do shell script ""open -a mactex-math-editor; curl -s -X POST http://127.0.0.1:45678/" & cmd & """"
+            MacScript scpt
+        End If
+    #End If
 End Sub
 
 Private Sub SendLatexToServer(encodedLatex As String)
-    On Error GoTo Fallback
-    Dim jsonPayload As String
-    jsonPayload = "{""latex"": """ & encodedLatex & """}"
-    
-    #If Mac Then
-        AppleScriptTask "MacTeXMathEditor.scpt", "SendLatexToEditor", jsonPayload
-    #Else
-        ' Windows fallback
-    #End If
-    Exit Sub
-
-Fallback:
     On Error Resume Next
-    Dim appleScriptCode As String
-    appleScriptCode = "do shell script ""curl -s -X POST http://127.0.0.1:45678/edit " & _
-                      "-H 'Content-Type: application/json' " & _
-                      "-d '" & jsonPayload & "'"""
-    MacScript appleScriptCode
+    #If Mac Then
+        Dim jsonPayload As String
+        jsonPayload = "{""latex"": """ & encodedLatex & """}"
+        Dim res As String
+        res = AppleScriptTask("MacTeXMathEditor.scpt", "SendLatexToEditor", jsonPayload)
+        If Err.Number <> 0 Then
+            Err.Clear
+            Dim scpt As String
+            scpt = "tell application ""mactex-math-editor"" to activate" & vbCr & _
+                   "do shell script ""open -a mactex-math-editor; curl -s -X POST http://127.0.0.1:45678/edit -H 'Content-Type: application/json' -d '" & jsonPayload & "'"""
+            MacScript scpt
+        End If
+    #End If
 End Sub

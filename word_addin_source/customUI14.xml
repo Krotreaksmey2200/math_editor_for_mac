@@ -7,7 +7,7 @@
         <group id="grpEquations" label="សមីការគណិតវិទ្យា">
           <button id="btnEditEquation" 
                   label="កែសម្រួលសមីការ" 
-                  imageMso="ObjectInsert" 
+                  imageMso="EquationOptions" 
                   size="large" 
                   onAction="OnEditEquationClick" 
                   screentip="កែសម្រួលសមីការ" 
