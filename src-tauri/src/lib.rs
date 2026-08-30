@@ -29,24 +29,35 @@ struct EditPayload {
     latex: String,
 }
 
+fn activate_app_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+    #[cfg(target_os = "macos")]
+    unsafe {
+        use objc::{msg_send, sel, sel_impl};
+        if let Some(cls) = objc::runtime::Class::get("NSApplication") {
+            let ns_app: *mut objc::runtime::Object = msg_send![cls, sharedApplication];
+            if !ns_app.is_null() {
+                let _: () = msg_send![ns_app, activateIgnoringOtherApps: true];
+            }
+        }
+        let _ = std::process::Command::new("osascript")
+            .arg("-e")
+            .arg("tell application id \"com.heng.mactex-math-editor\" to activate")
+            .spawn();
+    }
+}
+
 async fn edit_handler(
     State(state): State<AppState>,
     Json(payload): Json<EditPayload>,
 ) -> impl IntoResponse {
     if let Some(app) = &state.app_handle {
         let _ = app.emit("edit-equation", &payload.latex);
-        if let Some(window) = app.get_webview_window("main") {
-            let _ = window.unminimize();
-            let _ = window.show();
-            let _ = window.set_focus();
-        }
-        #[cfg(target_os = "macos")]
-        {
-            let _ = std::process::Command::new("osascript")
-                .arg("-e")
-                .arg("tell application \"mactex-math-editor\" to activate")
-                .spawn();
-        }
+        activate_app_window(app);
     }
     "OK"
 }
@@ -56,18 +67,7 @@ async fn new_inline_handler(
 ) -> impl IntoResponse {
     if let Some(app) = &state.app_handle {
         let _ = app.emit("edit-equation", "");
-        if let Some(window) = app.get_webview_window("main") {
-            let _ = window.unminimize();
-            let _ = window.show();
-            let _ = window.set_focus();
-        }
-        #[cfg(target_os = "macos")]
-        {
-            let _ = std::process::Command::new("osascript")
-                .arg("-e")
-                .arg("tell application \"mactex-math-editor\" to activate")
-                .spawn();
-        }
+        activate_app_window(app);
     }
     "OK"
 }
@@ -77,18 +77,7 @@ async fn new_display_handler(
 ) -> impl IntoResponse {
     if let Some(app) = &state.app_handle {
         let _ = app.emit("edit-equation", "");
-        if let Some(window) = app.get_webview_window("main") {
-            let _ = window.unminimize();
-            let _ = window.show();
-            let _ = window.set_focus();
-        }
-        #[cfg(target_os = "macos")]
-        {
-            let _ = std::process::Command::new("osascript")
-                .arg("-e")
-                .arg("tell application \"mactex-math-editor\" to activate")
-                .spawn();
-        }
+        activate_app_window(app);
     }
     "OK"
 }
