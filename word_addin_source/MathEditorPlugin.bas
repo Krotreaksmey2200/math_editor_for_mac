@@ -102,13 +102,31 @@ Public Sub EditSelectedEquation()
     Dim sel As Selection
     Set sel = Application.Selection
     
-    If sel.InlineShapes.Count = 0 Then
+    Dim shape As InlineShape
+    Set shape = Nothing
+    
+    If sel.InlineShapes.Count > 0 Then
+        Set shape = sel.InlineShapes(1)
+    ElseIf sel.Hyperlinks.Count > 0 Then
+        If sel.Hyperlinks(1).Range.InlineShapes.Count > 0 Then
+            Set shape = sel.Hyperlinks(1).Range.InlineShapes(1)
+        End If
+    End If
+    
+    If shape Is Nothing Then
+        Dim i As Long
+        For i = 1 To ActiveDocument.InlineShapes.Count
+            If ActiveDocument.InlineShapes(i).Range.Start <= sel.Range.Start And ActiveDocument.InlineShapes(i).Range.End >= sel.Range.Start Then
+                Set shape = ActiveDocument.InlineShapes(i)
+                Exit For
+            End If
+        Next i
+    End If
+    
+    If shape Is Nothing Then
         MsgBox "Please select a MathEditor equation image to edit.", vbExclamation, "MathEditor"
         Exit Sub
     End If
-    
-    Dim shape As InlineShape
-    Set shape = sel.InlineShapes(1)
     
     Dim altText As String
     altText = shape.AlternativeText

@@ -290,6 +290,10 @@ on run argv
                         set actual_depth to shapeHeight * ratioVal
                         set font position of font object of shapeObj to -actual_depth
                         set alternative text of theShape to "ratio:" & "{}" & "|latex:" & latex_str
+                        try
+                            make new hyperlink at theShape with properties {address:"", sub address:"EditSelectedEquation"}
+                        on error
+                        end try
                     on error
                     end try
                 end if
