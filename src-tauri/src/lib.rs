@@ -34,10 +34,39 @@ async fn edit_handler(
     Json(payload): Json<EditPayload>,
 ) -> impl IntoResponse {
     if let Some(app) = &state.app_handle {
-        // Emit event to React
         let _ = app.emit("edit-equation", &payload.latex);
-        
-        // Bring app to front via AppleScript
+        #[cfg(target_os = "macos")]
+        {
+            let _ = std::process::Command::new("osascript")
+                .arg("-e")
+                .arg("tell application \"mactex-math-editor\" to activate")
+                .spawn();
+        }
+    }
+    "OK"
+}
+
+async fn new_inline_handler(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    if let Some(app) = &state.app_handle {
+        let _ = app.emit("edit-equation", "");
+        #[cfg(target_os = "macos")]
+        {
+            let _ = std::process::Command::new("osascript")
+                .arg("-e")
+                .arg("tell application \"mactex-math-editor\" to activate")
+                .spawn();
+        }
+    }
+    "OK"
+}
+
+async fn new_display_handler(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    if let Some(app) = &state.app_handle {
+        let _ = app.emit("edit-equation", "");
         #[cfg(target_os = "macos")]
         {
             let _ = std::process::Command::new("osascript")
@@ -88,6 +117,8 @@ async fn start_server(state: AppState) {
     let app = Router::new()
         .route("/ws", get(ws_handler))
         .route("/edit", post(edit_handler))
+        .route("/new-inline", post(new_inline_handler))
+        .route("/new-display", post(new_display_handler))
         .fallback_service(ServeDir::new(addin_dir))
         .layer(CorsLayer::permissive())
         .with_state(state);
