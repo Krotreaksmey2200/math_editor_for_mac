@@ -22,7 +22,7 @@ End Sub
 ' ------------------------------------------------------------------------------
 
 ' Group 1: សមីការគណិតវិទ្យា (Equations)
-Public Sub OnOpenMathEditorClick(Optional control As Object)
+Public Sub OnOpenMathEditorClick()
     On Error GoTo ErrorHandler
     CallAppCommand "new-inline"
     Exit Sub
@@ -30,7 +30,7 @@ ErrorHandler:
     MsgBox "មិនអាចបើក MacTeX MathEditor បានទេ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
-Public Sub OnEditEquationClick(Optional control As Object)
+Public Sub OnEditEquationClick()
     On Error GoTo ErrorHandler
     EditSelectedEquation
     Exit Sub
@@ -38,7 +38,7 @@ ErrorHandler:
     MsgBox "កំហុសពេលកែសម្រួលសមីការ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
-Public Sub OnInlineEqClick(Optional control As Object)
+Public Sub OnInlineEqClick()
     On Error GoTo ErrorHandler
     CallAppCommand "new-inline"
     Exit Sub
@@ -46,7 +46,7 @@ ErrorHandler:
     MsgBox "កំហុសសមីការក្នុងជួរ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
-Public Sub OnBaselineAlignClick(Optional control As Object)
+Public Sub OnBaselineAlignClick()
     On Error GoTo ErrorHandler
     AlignDocumentEquations
     Exit Sub
@@ -54,7 +54,7 @@ ErrorHandler:
     MsgBox "កំហុសតម្រឹមជួរ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
-Public Sub OnDisplayEqClick(Optional control As Object)
+Public Sub OnDisplayEqClick()
     On Error GoTo ErrorHandler
     CallAppCommand "new-display"
     Exit Sub
@@ -62,7 +62,7 @@ ErrorHandler:
     MsgBox "កំហុសសមីការកណ្ដាលបន្ទាត់: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
-Public Sub OnLeftNumberedEqClick(Optional control As Object)
+Public Sub OnLeftNumberedEqClick()
     On Error GoTo ErrorHandler
     InsertNumberedEquation "left"
     CallAppCommand "new-inline"
@@ -71,7 +71,7 @@ ErrorHandler:
     MsgBox "កំហុសសមីការលេខរៀងឆ្វេង: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
-Public Sub OnRightNumberedEqClick(Optional control As Object)
+Public Sub OnRightNumberedEqClick()
     On Error GoTo ErrorHandler
     InsertNumberedEquation "right"
     CallAppCommand "new-inline"
@@ -80,7 +80,7 @@ ErrorHandler:
     MsgBox "កំហុសសមីការលេខរៀងស្តាំ: " & Err.Description, vbExclamation, "MathEditor"
 End Sub
 
-Public Sub OnInsertEqNumClick(Optional control As Object)
+Public Sub OnInsertEqNumClick()
     On Error GoTo ErrorHandler
     InsertEquationNumberField
     Exit Sub
@@ -89,55 +89,55 @@ ErrorHandler:
 End Sub
 
 ' Group 2: ជំពូក & ផ្នែក (Chapter & Section Breaks)
-Public Sub OnInsertChapterBreakClick(Optional control As Object)
+Public Sub OnInsertChapterBreakClick()
     InsertBreakMarker "chapter"
 End Sub
 
-Public Sub OnInsertSectionBreakClick(Optional control As Object)
+Public Sub OnInsertSectionBreakClick()
     InsertBreakMarker "section"
 End Sub
 
-Public Sub OnInsertNextChapterBreakClick(Optional control As Object)
+Public Sub OnInsertNextChapterBreakClick()
     InsertBreakMarker "next_chapter"
 End Sub
 
-Public Sub OnInsertNextSectionBreakClick(Optional control As Object)
+Public Sub OnInsertNextSectionBreakClick()
     InsertBreakMarker "next_section"
 End Sub
 
-Public Sub OnModifyChapterBreakClick(Optional control As Object)
+Public Sub OnModifyChapterBreakClick()
     MsgBox "ការកំណត់លេខរៀងជំពូក: បានកំណត់លេខរៀងជំពូកចាប់ផ្ដើម។", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnModifySectionBreakClick(Optional control As Object)
+Public Sub OnModifySectionBreakClick()
     MsgBox "ការកំណត់លេខរៀងផ្នែក: បានកំណត់លេខរៀងផ្នែកចាប់ផ្ដើម។", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnDeleteSectionBreakClick(Optional control As Object)
+Public Sub OnDeleteSectionBreakClick()
     DeleteCurrentBreakMarker
 End Sub
 
-Public Sub OnToggleShowBreaksClick(Optional control As Object)
+Public Sub OnToggleShowBreaksClick()
     On Error Resume Next
     ActiveWindow.View.ShowHiddenText = Not ActiveWindow.View.ShowHiddenText
 End Sub
 
 ' Group 3: លេខរៀង & ការយោងសមីការ (Numbering & References)
-Public Sub OnUpdateNumFormatClick(Optional control As Object)
+Public Sub OnUpdateNumFormatClick()
     MsgBox "ទម្រង់បង្ហាញលេខរៀងសមីការ: (ជំពូក.ផ្នែក.សមីការ)", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnUpdateAllNumbersClick(Optional control As Object)
+Public Sub OnUpdateAllNumbersClick()
     UpdateAllFieldsInDoc
 End Sub
 
-Public Sub OnInsertEqRefClick(Optional control As Object)
+Public Sub OnInsertEqRefClick()
     InsertEquationReferenceLink
 End Sub
 
-Public Sub OnAutoAlignToggle(Optional control As Object, Optional pressed As Boolean)
-    gAutoAlignEnabled = pressed
-    If pressed Then
+Public Sub OnAutoAlignToggle()
+    gAutoAlignEnabled = Not gAutoAlignEnabled
+    If gAutoAlignEnabled Then
         MsgBox "បានបើកការតម្រឹមស្វ័យប្រវត្តិ: សមីការនឹងតម្រឹមជួរជម្រៅដោយស្វ័យប្រវត្តិពេលបញ្ចូល។", vbInformation, "MathEditor"
     End If
 End Sub
