@@ -1,4 +1,8 @@
-Attribute VB_Name = "MathEditorPlugin"
+import subprocess
+import os
+import zipfile
+
+bas_content = '''Attribute VB_Name = "MathEditorPlugin"
 Option Explicit
 
 Public Sub AutoExec()
@@ -108,3 +112,9 @@ Private Sub EditSelectedEquation()
         MacScript scpt
     #End If
 End Sub
+'''
+
+with open('word_addin_source/MathEditorPlugin.bas', 'w', encoding='utf-8') as f:
+    f.write(bas_content)
+
+print("✓ Updated MathEditorPlugin.bas with clean standalone macros")
