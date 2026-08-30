@@ -4,7 +4,7 @@
 
 ---
 
-## 🇰🇭 លក្ខណៈពិសេសចម្បង (Features)
+## 🇰🇭  (Features)
 
 - **WYSIWYG Math Palette:** Clickable palettes with rendered mathematical symbol icons (KaTeX) for fast equation creation.
 - **Live LaTeX Compilation:** Instantly compiles LaTeX code into SVG and high-resolution PNG images using your local MacTeX installation.
@@ -13,30 +13,9 @@
 - **Bi-directional Editing:** Double-click equations in Word to edit them back inside MacTeX MathEditor.
 - **Automated Installers:** Bundled `.pkg` and `.dmg` installers for quick setup.
 
----
 
-## 📁 គ្រោងចរចនាសម្ព័ន្ធ Project (Repository Structure)
 
-```text
-mactex-math-editor/
-├── src/                          # React Frontend (UI Components & Palettes)
-│   ├── App.tsx                   # Main Workspace Interface
-│   ├── mathTypeData.ts           # MathType Palette definitions & snippets
-│   └── mathSymbols.ts            # Symbol categorization
-├── src-tauri/                    # Tauri Rust Backend
-│   ├── src/lib.rs                # macOS Clipboard & AppleScript bridge
-│   ├── word_plugin/              # Word Add-in (.dotm) & AppleScript (.scpt)
-│   └── tauri.conf.json           # Tauri build settings
-├── public/                       # Static Assets & MathType icons
-│   └── mathtype/                 # 239 rendered math symbol icons
-├── addin/                        # Web Add-in Manifests
-├── build_installer_dmg.sh        # Automated DMG package builder script
-└── README.md                     # Project documentation
-```
-
----
-
-## 🚀 របៀប Install & Run (Development & Setup)
+## Install & Run (Development & Setup)
 
 ### Prerequisites
 - **macOS** (Built specifically for macOS & Microsoft Word for Mac)
