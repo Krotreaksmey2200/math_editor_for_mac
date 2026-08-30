@@ -1,3 +1,11 @@
+on LaunchApp(param)
+	my ActivateApp()
+	try
+		do shell script "curl -s -X POST http://127.0.0.1:45678/new-inline"
+	end try
+	return "OK"
+end LaunchApp
+
 on ActivateApp()
 	try
 		tell application id "com.heng.mactex-math-editor" to activate

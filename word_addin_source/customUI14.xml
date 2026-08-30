@@ -7,7 +7,7 @@
                   label="បើក MacTeX MathEditor" 
                   imageMso="EquationOptions" 
                   size="large" 
-                  onAction="OnOpenMathEditorClick" 
+                  onAction="OpenMacTeXMathEditor" 
                   screentip="បើក MacTeX MathEditor" 
                   supertip="បើកផ្ទាំងកម្មវិធី MacTeX MathEditor មកប្រើប្រាស់ផ្ទាល់" />
         </group>
