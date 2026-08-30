@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "=== Building MacTeX MathEditor Full Installer DMG v1.1.0 ==="
+echo "=== Building MacTeX MathEditor Full Installer DMG v1.2.0 ==="
 
 # 1. Ensure production app is built
 npm run tauri build
@@ -49,12 +49,12 @@ EOF
 
 chmod +x "$PKG_SCRIPTS/postinstall"
 mkdir -p "../installers"
-PKG_OUTPUT="../installers/Install_Word_Plugin_v1.1.0.pkg"
+PKG_OUTPUT="../installers/Install_Word_Plugin_v1.2.0.pkg"
 
 pkgbuild --root "$PKG_ROOT" \
          --scripts "$PKG_SCRIPTS" \
          --identifier "com.heng.mactex-math-editor.plugin" \
-         --version "1.1.0" \
+         --version "1.2.0" \
          "$PKG_OUTPUT"
 
 rm -rf "$PKG_ROOT" "$PKG_SCRIPTS"
@@ -80,11 +80,11 @@ cp "$PKG_OUTPUT" "$STAGING_DIR/Install Word Plugin.pkg"
 echo "Creating Applications symlink..."
 ln -s /Applications "$STAGING_DIR/Applications"
 
-OUTPUT_DMG="../installers/MacTeXMathEditor_Full_Installer_v1.1.0.dmg"
+OUTPUT_DMG="../installers/MacTeXMathEditor_Full_Installer_v1.2.0.dmg"
 rm -f "$OUTPUT_DMG"
 
 echo "Packaging into DMG..."
-hdiutil create -volname "MacTeX MathEditor Installer v1.1.0" -srcfolder "$STAGING_DIR" -ov -format UDZO "$OUTPUT_DMG"
+hdiutil create -volname "MacTeX MathEditor Installer v1.2.0" -srcfolder "$STAGING_DIR" -ov -format UDZO "$OUTPUT_DMG"
 rm -rf "$STAGING_DIR"
 
 echo "=== Build Complete! DMG saved at: $OUTPUT_DMG ==="
