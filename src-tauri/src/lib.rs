@@ -35,6 +35,11 @@ async fn edit_handler(
 ) -> impl IntoResponse {
     if let Some(app) = &state.app_handle {
         let _ = app.emit("edit-equation", &payload.latex);
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
         #[cfg(target_os = "macos")]
         {
             let _ = std::process::Command::new("osascript")
@@ -51,6 +56,11 @@ async fn new_inline_handler(
 ) -> impl IntoResponse {
     if let Some(app) = &state.app_handle {
         let _ = app.emit("edit-equation", "");
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
         #[cfg(target_os = "macos")]
         {
             let _ = std::process::Command::new("osascript")
@@ -67,6 +77,11 @@ async fn new_display_handler(
 ) -> impl IntoResponse {
     if let Some(app) = &state.app_handle {
         let _ = app.emit("edit-equation", "");
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
         #[cfg(target_os = "macos")]
         {
             let _ = std::process::Command::new("osascript")
