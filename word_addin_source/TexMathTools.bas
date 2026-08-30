@@ -251,3 +251,78 @@ Public Sub InsertNumberedEquation(align As String)
         sel.Fields.Add Range:=sel.Range, Type:=wdFieldEmpty, Text:="SEQ Equation", PreserveFormatting:=True
         sel.TypeText ") \qquad f(x) = \text{equation}"
     End If
+End Sub
+
+Public Sub InsertEquationNumberField()
+    On Error Resume Next
+    Dim sel As Selection
+    Set sel = Application.Selection
+    sel.TypeText "("
+    sel.Fields.Add Range:=sel.Range, Type:=wdFieldEmpty, Text:="SEQ Equation", PreserveFormatting:=True
+    sel.TypeText ")"
+End Sub
+
+Public Sub InsertBreakMarker(breakType As String)
+    On Error Resume Next
+    Dim sel As Selection
+    Set sel = Application.Selection
+    
+    sel.Font.Hidden = True
+    sel.TypeText "[MathEditor_" & UCase(breakType) & "]"
+    sel.Font.Hidden = False
+End Sub
+
+Public Sub DeleteCurrentBreakMarker()
+    On Error Resume Next
+    Dim sel As Selection
+    Set sel = Application.Selection
+    sel.Delete
+End Sub
+
+Public Sub UpdateAllFieldsInDoc()
+    On Error Resume Next
+    Dim fld As Field
+    For Each fld In ActiveDocument.Fields
+        fld.Update
+    Next fld
+    MsgBox "បានធ្វើបច្ចុប្បន្នភាពលេខរៀងសមីការ និងការយោងទាំងអស់ក្នុង Document!", vbInformation, "MathEditor"
+End Sub
+
+Public Sub InsertEquationReferenceLink()
+    On Error Resume Next
+    Dim sel As Selection
+    Set sel = Application.Selection
+    sel.TypeText "Eq. ("
+    sel.Fields.Add Range:=sel.Range, Type:=wdFieldEmpty, Text:="SEQ Equation \c", PreserveFormatting:=True
+    sel.TypeText ")"
+End Sub
+
+Private Sub CallAppCommand(cmd As String)
+    On Error Resume Next
+    #If Mac Then
+        Dim res As String
+        res = AppleScriptTask("MacTeXMathEditor.scpt", "CallAppCommand", cmd)
+        If Err.Number <> 0 Then
+            Err.Clear
+            Dim scpt As String
+            scpt = "do shell script ""open -b com.heng.mactex-math-editor 2>/dev/null || open -a mactex-math-editor 2>/dev/null || true; curl -s -X POST http://127.0.0.1:45678/" & cmd & """"
+            MacScript scpt
+        End If
+    #End If
+End Sub
+
+Private Sub SendLatexToServer(encodedLatex As String)
+    On Error Resume Next
+    #If Mac Then
+        Dim jsonPayload As String
+        jsonPayload = "{""latex"": """ & encodedLatex & """}"
+        Dim res As String
+        res = AppleScriptTask("MacTeXMathEditor.scpt", "SendLatexToEditor", jsonPayload)
+        If Err.Number <> 0 Then
+            Err.Clear
+            Dim scpt As String
+            scpt = "do shell script ""open -b com.heng.mactex-math-editor 2>/dev/null || open -a mactex-math-editor 2>/dev/null || true; curl -s -X POST http://127.0.0.1:45678/edit -H 'Content-Type: application/json' -d '" & jsonPayload & "'"""
+            MacScript scpt
+        End If
+    #End If
+End Sub

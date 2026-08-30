@@ -305,7 +305,7 @@ Private Sub CallAppCommand(cmd As String)
         If Err.Number <> 0 Then
             Err.Clear
             Dim scpt As String
-            scpt = "do shell script ""curl -s -X POST http://127.0.0.1:45678/" & cmd & " || open -a mactex-math-editor || open '/Applications/mactex-math-editor.app' || true"""
+            scpt = "do shell script ""open -b com.heng.mactex-math-editor 2>/dev/null || open -a mactex-math-editor 2>/dev/null || true; curl -s -X POST http://127.0.0.1:45678/" & cmd & """"
             MacScript scpt
         End If
     #End If
@@ -321,7 +321,7 @@ Private Sub SendLatexToServer(encodedLatex As String)
         If Err.Number <> 0 Then
             Err.Clear
             Dim scpt As String
-            scpt = "do shell script ""curl -s -X POST http://127.0.0.1:45678/edit -H 'Content-Type: application/json' -d '" & jsonPayload & "' || open -a mactex-math-editor || open '/Applications/mactex-math-editor.app' || true"""
+            scpt = "do shell script ""open -b com.heng.mactex-math-editor 2>/dev/null || open -a mactex-math-editor 2>/dev/null || true; curl -s -X POST http://127.0.0.1:45678/edit -H 'Content-Type: application/json' -d '" & jsonPayload & "'"""
             MacScript scpt
         End If
     #End If

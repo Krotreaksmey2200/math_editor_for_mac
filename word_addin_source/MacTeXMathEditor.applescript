@@ -1,9 +1,14 @@
 on ActivateApp()
 	try
-		tell application "mactex-math-editor" to activate
-	end try
-	try
-		do shell script "open -a mactex-math-editor"
+		tell application id "com.heng.mactex-math-editor" to activate
+	on error
+		try
+			tell application "mactex-math-editor" to activate
+		on error
+			try
+				do shell script "open -b com.heng.mactex-math-editor 2>/dev/null || open -a mactex-math-editor 2>/dev/null || open '/Applications/mactex-math-editor.app' 2>/dev/null || true"
+			end try
+		end try
 	end try
 end ActivateApp
 
