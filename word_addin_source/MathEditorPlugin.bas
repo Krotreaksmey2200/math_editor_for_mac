@@ -4,6 +4,18 @@
 Option Explicit
 
 Public gAutoAlignEnabled As Boolean
+Public gWordAppEvents As clsWordEvents
+
+Public Sub AutoExec()
+    On Error Resume Next
+    Set gWordAppEvents = New clsWordEvents
+    Set gWordAppEvents.App = Application
+End Sub
+
+Public Sub AutoOpen()
+    On Error Resume Next
+    AutoExec
+End Sub
 
 ' ------------------------------------------------------------------------------
 ' RIBBON CALLBACK HANDLERS
