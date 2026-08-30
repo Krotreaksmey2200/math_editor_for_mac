@@ -7,7 +7,7 @@
         <group id="grpEquations" label="សមីការគណិតវិទ្យា">
           <button id="btnEditEquation" 
                   label="កែសម្រួលសមីការ" 
-                  imageMso="EquationInsert" 
+                  imageMso="ObjectInsert" 
                   size="large" 
                   onAction="OnEditEquationClick" 
                   screentip="កែសម្រួលសមីការ" 
@@ -15,7 +15,7 @@
                   
           <button id="btnInlineEquation" 
                   label="សមីការក្នុងជួរ" 
-                  imageMso="EquationProfessional" 
+                  imageMso="EquationOptions" 
                   size="normal" 
                   onAction="OnInlineEqClick" 
                   screentip="សមីការក្នុងជួរ" 
@@ -31,7 +31,7 @@
                   
           <button id="btnDisplayEquation" 
                   label="សមីការកណ្ដាលបន្ទាត់" 
-                  imageMso="EquationLinear" 
+                  imageMso="EquationOptions" 
                   size="normal" 
                   onAction="OnDisplayEqClick" 
                   screentip="សមីការកណ្ដាលបន្ទាត់" 
