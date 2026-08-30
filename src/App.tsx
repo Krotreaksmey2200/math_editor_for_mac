@@ -58,7 +58,7 @@ const t = {
     created: "Created by",
     copyBtn: "Copy to Word", insertBtn: "Insert into Word",
     customSizeMenu: "Custom...", customSizeTitle: "Custom Font Size", customSizePrompt: "Enter custom font size (e.g. 16pt, 32pt):",
-    cancel: "Cancel", setSize: "Set Size", defaultText: "(Default)"
+    cancel: "Cancel", setSize: "Set Size", defaultText: "(Default)", shortcuts: "MathType Keyboard Shortcuts"
   },
   km: {
     file: "ឯកសារ", edit: "កែប្រែ", view: "បង្ហាញ", preamble: "Preamble", style: "រចនាបថ", size: "ទំហំ", pref: "ការកំណត់", help: "ជំនួយ",
@@ -68,7 +68,7 @@ const t = {
     created: "បង្កើតដោយ",
     copyBtn: "ចម្លងទៅ Word", insertBtn: "បញ្ចូលទៅ Word",
     customSizeMenu: "ទំហំផ្សេងៗ...", customSizeTitle: "កំណត់ទំហំអក្សរ", customSizePrompt: "បញ្ចូលទំហំអក្សរ (ឧទាហរណ៍៖ 16pt, 32pt):",
-    cancel: "បោះបង់", setSize: "យល់ព្រម", defaultText: "(ដើម)"
+    cancel: "បោះបង់", setSize: "យល់ព្រម", defaultText: "(ដើម)", shortcuts: "គ្រាប់ចុចកាត់ MathType (Shortcuts)"
   }
 };
 
@@ -189,6 +189,7 @@ export default function App() {
   const [fontSize, setFontSize] = useState<string>("12pt");
   const [baselineEnabled, setBaselineEnabled] = useState<boolean>(true);
   const [showAbout, setShowAbout] = useState<boolean>(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState<boolean>(false);
   const [showCustomSize, setShowCustomSize] = useState<boolean>(false);
   const [customSizeInput, setCustomSizeInput] = useState<string>("12pt");
   const [latexEngine, setLatexEngine] = useState<"latex" | "xelatex" | "lualatex">("latex");
@@ -219,6 +220,82 @@ export default function App() {
       mf.addEventListener("input", handleInput);
       return () => mf.removeEventListener("input", handleInput);
     }
+  }, []);
+
+  // Authentic MathType Keyboard Shortcuts Listener (Cmd/Ctrl + Shortcuts)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      if (!isCmdOrCtrl) return;
+
+      const key = e.key.toLowerCase();
+      let snippet: string | null = null;
+
+      // Cmd+F -> Fraction (a/b)
+      if (key === "f" && !e.shiftKey) {
+        snippet = "\\frac{#0}{#0}";
+      }
+      // Cmd+R -> Square Root (√x)
+      else if (key === "r" && !e.shiftKey) {
+        snippet = "\\sqrt{#0}";
+      }
+      // Cmd+N or Cmd+Shift+R -> N-th Root (ⁿ√x)
+      else if ((key === "r" && e.shiftKey) || (key === "n" && !e.shiftKey)) {
+        snippet = "\\sqrt[#0]{#0}";
+      }
+      // Cmd+H -> Superscript (xⁿ) - "H" for High
+      else if (key === "h" && !e.shiftKey) {
+        snippet = "^{#0}";
+      }
+      // Cmd+L -> Subscript (xₙ) - "L" for Low
+      else if (key === "l" && !e.shiftKey) {
+        snippet = "_{#0}";
+      }
+      // Cmd+J -> Joint Subscript & Superscript (xₙⁿ)
+      else if (key === "j" && !e.shiftKey) {
+        snippet = "_{#0}^{#0}";
+      }
+      // Cmd+I -> Indefinite Integral (∫)
+      else if (key === "i" && !e.shiftKey) {
+        snippet = "\\int";
+      }
+      // Cmd+Shift+I -> Definite Integral (∫_a^b)
+      else if (key === "i" && e.shiftKey) {
+        snippet = "\\int_{#0}^{#0}";
+      }
+      // Cmd+Shift+S -> Summation (∑_a^b)
+      else if (key === "s" && e.shiftKey) {
+        snippet = "\\sum_{#0}^{#0}";
+      }
+      // Cmd+Shift+P -> Product (∏_a^b)
+      else if (key === "p" && e.shiftKey) {
+        snippet = "\\prod_{#0}^{#0}";
+      }
+      // Cmd+9 or Cmd+( -> Parentheses ( )
+      else if (key === "9" || key === "(") {
+        snippet = "\\left( #0 \\right)";
+      }
+      // Cmd+[ -> Brackets [ ]
+      else if (key === "[") {
+        snippet = "\\left[ #0 \\right]";
+      }
+      // Cmd+{ or Cmd+Shift+[ -> Braces { }
+      else if (key === "{" || (key === "[" && e.shiftKey)) {
+        snippet = "\\left\\{ #0 \\right\\}";
+      }
+
+      if (snippet) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (mathFieldRef.current) {
+          mathFieldRef.current.executeCommand(["insert", snippet]);
+          setLatex(mathFieldRef.current.value);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, []);
 
   // Listen for VBA Double-Click Edit Events from Rust
@@ -580,6 +657,7 @@ export default function App() {
             { label: baselineEnabled ? `✓ ${t[appLang].enableBaseline}` : `  ${t[appLang].enableBaseline}`, action: () => setBaselineEnabled(!baselineEnabled) }
           ]} />
           <MenuBarButton label={t[appLang].help} items={[
+            { label: t[appLang].shortcuts, action: () => setShowShortcutsModal(true) },
             { label: t[appLang].about, action: () => setShowAbout(true) }
           ]} />
         </div>
@@ -917,6 +995,103 @@ export default function App() {
                 className="px-4 py-1 bg-[#4a90e2] border border-[#3070b3] rounded text-sm text-white hover:bg-[#357abd] focus:outline-none shadow-sm"
               >
                 {t[appLang].setSize}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* MathType Keyboard Shortcuts Modal */}
+      {showShortcutsModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[9999]"
+          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}
+        >
+          <div 
+            className="bg-[#ececec] border border-[#a3a3a3] rounded-md shadow-2xl flex flex-col overflow-hidden font-sans"
+            style={{ 
+              position: 'absolute', 
+              top: '50%', 
+              left: '50%', 
+              transform: 'translate(-50%, -50%)',
+              width: '100%',
+              maxWidth: '480px',
+              maxHeight: '85vh'
+            }}
+          >
+            <div className="bg-[#dcdcdc] border-b border-[#a3a3a3] px-3 py-2 flex justify-between items-center">
+              <span className="font-bold text-sm text-black">⌨️ MathType Keyboard Shortcuts</span>
+              <button onClick={() => setShowShortcutsModal(false)} className="hover:text-red-600 focus:outline-none text-black">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-4 overflow-y-auto bg-white flex flex-col gap-2 text-xs text-black custom-scrollbar" style={{ maxHeight: 'calc(85vh - 90px)' }}>
+              <p className="text-[#555] mb-1 font-medium">Use these keyboard shortcuts (⌘ on Mac / Ctrl on Windows) inside the editor:</p>
+              
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Fraction (a/b)</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + F</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Square Root (√x)</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + R</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>N-th Root (ⁿ√x)</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + N</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Superscript (High) xⁿ</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + H</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Subscript (Low) xₙ</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + L</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Sub & Super xₙⁿ</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + J</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Integral ∫</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + I</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Definite Integral ∫_a^b</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + ⇧ + I</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Summation ∑</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + ⇧ + S</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Product ∏</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + ⇧ + P</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Parentheses ( )</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + 9</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Square Brackets [ ]</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">⌘ + [</kbd>
+                </div>
+                <div className="flex items-center justify-between bg-gray-50 border p-1.5 rounded">
+                  <span>Curly Braces {"{ }"}</span>
+                  <kbd className="bg-white border px-1.5 py-0.5 rounded font-mono font-bold text-[11px] shadow-xs">{"⌘ + {"}</kbd>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-[#dcdcdc] border-t border-[#a3a3a3] px-3 py-2 flex justify-center">
+              <button 
+                onClick={() => setShowShortcutsModal(false)} 
+                className="px-6 py-1 bg-[#4a90e2] text-white border border-[#3070b3] rounded text-sm hover:bg-[#357abd] focus:outline-none shadow-sm"
+              >
+                Close
               </button>
             </div>
           </div>
