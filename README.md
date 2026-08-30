@@ -1,49 +1,76 @@
-# MacTeX MathEditor
+# MacTeX MathEditor (Khmer Math Editor)
 
-MacTeX MathEditor is a modern, standalone mathematical equation editor tailored for macOS users. It uses Tauri, React, and MacTeX (`latex` and `dvisvgm`) to provide a MathType-like experience for seamlessly writing, compiling, and inserting equations directly into Microsoft Word.
+**MacTeX MathEditor** is a modern, standalone mathematical equation editor tailored for macOS users and Microsoft Word integration. It combines Tauri, React, and MacTeX (`latex` and `dvisvgm`) to provide a MathType-like experience for seamlessly writing, compiling, and inserting equations directly into Microsoft Word with 100% perfect baseline alignment.
 
-## Features
+---
 
-- **WYSIWYG Palette Interface:** Clickable palettes for common math symbols and templates, similar to MathType.
-- **Live LaTeX Compilation:** Instantly compiles LaTeX code into high-quality SVG and PNG images using your local MacTeX installation.
-- **Perfect Baseline Alignment in Word:** Uses an advanced ratio-based calculation to automatically adjust the baseline shift (font position) of inline equations in Microsoft Word, ensuring perfect alignment with your text, regardless of how Word scales the image.
-- **One-Click Insert:** Directly inserts the compiled equation into your active Word document and perfectly aligns it.
-- **Batch Alignment:** Contains an "Align Document" button that scans the entire Word document and instantly realigns all equations using AppleScript and our scaling algorithms.
+## 🇰🇭 លក្ខណៈពិសេសចម្បង (Features)
 
-## Prerequisites
+- **WYSIWYG Math Palette:** Clickable palettes with rendered mathematical symbol icons (KaTeX) for fast equation creation.
+- **Live LaTeX Compilation:** Instantly compiles LaTeX code into SVG and high-resolution PNG images using your local MacTeX installation.
+- **Perfect Baseline Alignment in Word:** Uses a ratio-based calculation (`depth / height`) stored in image metadata. Microsoft Word automatically shifts inline equations to align perfectly with surrounding body text.
+- **One-Click Word Insertion:** Instantly inserts compiled equations into your active Microsoft Word document.
+- **Bi-directional Editing:** Double-click equations in Word to edit them back inside MacTeX MathEditor.
+- **Automated Installers:** Bundled `.pkg` and `.dmg` installers for quick setup.
 
-- **macOS** (Built specifically for Mac using AppleScript/AppleEvents to communicate with Microsoft Word).
-- **Microsoft Word for Mac**.
-- **MacTeX** or **BasicTeX** (Requires `latex` and `dvisvgm` binaries in `/Library/TeX/texbin`).
-- **Node.js** and **Rust** (for development).
+---
 
-## Installation and Running
+## 📁 គ្រោងចរចនាសម្ព័ន្ធ Project (Repository Structure)
 
-1. **Install Dependencies:**
-   ```bash
-   npm install
-   ```
+```text
+mactex-math-editor/
+├── src/                          # React Frontend (UI Components & Palettes)
+│   ├── App.tsx                   # Main Workspace Interface
+│   ├── mathTypeData.ts           # MathType Palette definitions & snippets
+│   └── mathSymbols.ts            # Symbol categorization
+├── src-tauri/                    # Tauri Rust Backend
+│   ├── src/lib.rs                # macOS Clipboard & AppleScript bridge
+│   ├── word_plugin/              # Word Add-in (.dotm) & AppleScript (.scpt)
+│   └── tauri.conf.json           # Tauri build settings
+├── public/                       # Static Assets & MathType icons
+│   └── mathtype/                 # 239 rendered math symbol icons
+├── addin/                        # Web Add-in Manifests
+├── build_installer_dmg.sh        # Automated DMG package builder script
+└── README.md                     # Project documentation
+```
 
-2. **Run in Development Mode:**
-   ```bash
-   npm run tauri dev
-   ```
+---
 
-3. **Build for Release:**
-   ```bash
-   npm run tauri build
-   ```
+## 🚀 របៀប Install & Run (Development & Setup)
 
-## How Baseline Alignment Works
+### Prerequisites
+- **macOS** (Built specifically for macOS & Microsoft Word for Mac)
+- **Microsoft Word for Mac**
+- **MacTeX** or **BasicTeX** (Requires `latex` and `dvisvgm` in `/Library/TeX/texbin`)
+- **Node.js** (v18+) & **Rust** (for development)
 
-Microsoft Word for Mac handles inline pictures by occasionally scaling them down (e.g., to 31% of their original size depending on DPI and font size). 
-Traditional baseline alignment methods fail because shifting the image down by the original LaTeX depth points results in a massive over-shift on the shrunken image.
+### 1. Install Dependencies
+```bash
+npm install
+```
 
-**Our Solution:**
-When compiling the equation, MacTeX MathEditor calculates the ratio of the equation's depth to its total height (`ratio = depth / height`). This ratio is injected into the alternative text (`altText`) of the copied image. 
-When inserted into Word, an AppleScript retrieves the physical height of the image as it appears on the page, multiplies it by the ratio, and applies the exact negative font position required. This guarantees 100% perfect alignment under all circumstances.
+### 2. Run Development Server
+- **Web Preview:**
+  ```bash
+  npm run dev
+  ```
+- **Native macOS Application (Tauri Dev Mode):**
+  ```bash
+  npm run tauri dev
+  ```
 
-## Tech Stack
-- Frontend: React, Tailwind CSS, Lucide Icons
-- Backend: Rust, Tauri, AppleScript (osascript)
-- Engine: LaTeX, dvisvgm, dvipng
+### 3. Build Production Installer Packages
+- **Build App & Standard Release:**
+  ```bash
+  npm run tauri build
+  ```
+- **Build Full `.dmg` & `.pkg` Installer:**
+  ```bash
+  ./build_installer_dmg.sh
+  ```
+
+---
+
+## 📄 License & Credits
+
+Created by **Heng / Krotreaksmey2200**. Built using React, Tauri, KaTeX, and TailwindCSS.

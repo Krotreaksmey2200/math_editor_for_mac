@@ -7,18 +7,27 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node & Build Outputs
 node_modules
 dist
 dist-ssr
 *.local
+target
+src-tauri/target
+pkg_build_full/root
 
-# Editor directories and files
+# OS & Editor
+.DS_Store
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Installers & Temp Bundles
+*.dmg
+*.pkg
+*.dotm
