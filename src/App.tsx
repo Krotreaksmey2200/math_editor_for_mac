@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "mathlive"; // Imports the <math-field> web component
-import { mathTypeRow1, mathTypeRow2, mathTypeTabs, mathTypeTabItems, MathTypePalette } from "./mathTypeData";
+import katex from "katex";
+import { mathTypeRow1, mathTypeRow2, MathTypePalette } from "./mathTypeData";
 import { CheckCircle, AlertCircle, Send } from "lucide-react";
 import "./App.css";
 
@@ -71,6 +72,16 @@ const t = {
   }
 };
 
+function renderSymbolIcon(item: { snippet: string; label?: string }) {
+  try {
+    const previewTex = item.snippet.replace(/#0/g, "\\square");
+    const html = katex.renderToString(previewTex, { throwOnError: false, displayMode: false });
+    return <span dangerouslySetInnerHTML={{ __html: html }} className="inline-flex items-center justify-center text-sm pointer-events-none" />;
+  } catch {
+    return <span className="text-xs font-math">{item.label || item.snippet}</span>;
+  }
+}
+
 function PaletteButton({ palette, onInsert }: { palette: MathTypePalette, onInsert: (tex: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLDivElement>(null);
@@ -96,11 +107,11 @@ function PaletteButton({ palette, onInsert }: { palette: MathTypePalette, onInse
         className={`p-[1px] hover:bg-[#d6e4f3] border transition-none cursor-default min-w-[28px] flex items-center justify-center ${isOpen ? 'bg-[#c5dff6] border-[#8cb0d8]' : 'border-transparent hover:border-[#8cb0d8]'}`}
         title={palette.tooltip}
       >
-        <img src={`/src/assets/mathtype/${palette.image}`} alt={palette.tooltip} className="h-[22px] w-auto pointer-events-none opacity-90" />
+        <img src={`/mathtype/${palette.image}`} alt={palette.tooltip} className="h-[22px] w-auto pointer-events-none opacity-90" />
       </button>
       
       {isOpen && palette.items.length > 0 && (
-        <div className="absolute top-full left-0 mt-[1px] bg-white border border-[#999999] shadow-[2px_2px_4px_rgba(0,0,0,0.2)] p-[1px] z-[100] w-max grid gap-[1px]" style={{ gridTemplateColumns: `repeat(${cols}, minmax(26px, 1fr))` }}>
+        <div className="absolute top-full left-0 mt-[1px] bg-white border border-[#999999] shadow-[2px_2px_4px_rgba(0,0,0,0.2)] p-[1px] z-[100] w-max grid gap-[1px]" style={{ gridTemplateColumns: `repeat(${cols}, minmax(28px, 1fr))` }}>
           {palette.items.map((item, idx) => (
             <button
               key={idx}
@@ -108,10 +119,10 @@ function PaletteButton({ palette, onInsert }: { palette: MathTypePalette, onInse
                 onInsert(item.snippet);
                 setIsOpen(false);
               }}
-              className="p-[1px] hover:bg-[#d6e4f3] text-center text-sm font-math min-h-[26px] border border-transparent hover:border-[#8cb0d8] flex items-center justify-center bg-transparent text-black"
+              className="p-1 hover:bg-[#d6e4f3] text-center min-h-[28px] border border-transparent hover:border-[#8cb0d8] flex items-center justify-center bg-white text-black"
               title={item.snippet}
             >
-              {item.label}
+              {renderSymbolIcon(item)}
             </button>
           ))}
         </div>
@@ -171,7 +182,7 @@ function MenuBarButton({ label, items }: { label: string, items: { label: string
 export default function App() {
   const [appLang, setAppLang] = useState<Lang>("en");
   const [latex, setLatex] = useState<string>("f(x) = \\frac{ax^3 + bx^2 + 4}{x - 2}");
-  const [activeMathTypeTab, setActiveMathTypeTab] = useState<string>("Algebra");
+
   const [isCompiling, setIsCompiling] = useState<boolean>(false);
   const [compileError, setCompileError] = useState<string>("");
   const [toastMessage, setToastMessage] = useState<string>("");
@@ -735,38 +746,7 @@ export default function App() {
           ))}
         </div>
 
-        {/* MathType Tab Bar */}
-        <div className="mt-1 flex flex-col px-1">
-          <div className="flex border-b border-[#a3a3a3]">
-            {mathTypeTabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveMathTypeTab(tab)}
-                className={`px-2 py-[2px] text-[11px] font-sans ${
-                  activeMathTypeTab === tab
-                    ? "bg-[#ffffff] text-black border-t border-l border-r border-[#a3a3a3] -mb-px relative z-10"
-                    : "bg-transparent text-[#444] hover:bg-[#e0e0e0] border-t border-l border-r border-transparent"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-          
-          {/* Tab Contents Area */}
-          <div className="bg-[#ffffff] border-b border-l border-r border-[#a3a3a3] p-1 flex flex-wrap gap-[1px] min-h-[46px] shadow-sm">
-            {(mathTypeTabItems[activeMathTypeTab] || []).map((item, idx) => (
-              <button
-                key={idx}
-                onClick={() => insertLatex(item.snippet)}
-                className="p-[1px] hover:bg-[#B3D7FF] border border-transparent hover:border-[#66A3FF] cursor-default flex items-center justify-center min-w-[24px]"
-                title={item.snippet}
-              >
-                <img src={`/src/assets/mathtype/${item.image}`} className="h-[22px] w-auto pointer-events-none opacity-90" />
-              </button>
-            ))}
-          </div>
-        </div>
+
       </div>
 
       {/* Main Visual WYSIWYG Workspace Area */}
