@@ -1,5 +1,5 @@
 ' ==============================================================================
-' Microsoft Word Add-in: MacTeX MathEditor Plugin Suite
+' Microsoft Word Add-in: MacTeX MathEditor Plugin Suite (Khmer Edition)
 ' ==============================================================================
 Option Explicit
 
@@ -18,89 +18,91 @@ Public Sub AutoOpen()
 End Sub
 
 ' ------------------------------------------------------------------------------
-' RIBBON CALLBACK HANDLERS (Using Optional control As Object for macOS compatibility)
+' RIBBON CALLBACK HANDLERS
 ' ------------------------------------------------------------------------------
 
-' Group 1: Equations
-Public Sub OnEditEquationClick(Optional control As Object)
+' Group 1: សមីការគណិតវិទ្យា (Equations)
+Public Sub OnEditEquationClick(control As IRibbonControl)
     EditSelectedEquation
 End Sub
 
-Public Sub OnInlineEqClick(Optional control As Object)
+Public Sub OnInlineEqClick(control As IRibbonControl)
     CallAppCommand "new-inline"
 End Sub
 
-Public Sub OnBaselineAlignClick(Optional control As Object)
+Public Sub OnBaselineAlignClick(control As IRibbonControl)
     AlignDocumentEquations
 End Sub
 
-Public Sub OnDisplayEqClick(Optional control As Object)
+Public Sub OnDisplayEqClick(control As IRibbonControl)
     CallAppCommand "new-display"
 End Sub
 
-Public Sub OnLeftNumberedEqClick(Optional control As Object)
+Public Sub OnLeftNumberedEqClick(control As IRibbonControl)
     InsertNumberedEquation "left"
+    CallAppCommand "new-inline"
 End Sub
 
-Public Sub OnRightNumberedEqClick(Optional control As Object)
+Public Sub OnRightNumberedEqClick(control As IRibbonControl)
     InsertNumberedEquation "right"
+    CallAppCommand "new-inline"
 End Sub
 
-Public Sub OnInsertEqNumClick(Optional control As Object)
+Public Sub OnInsertEqNumClick(control As IRibbonControl)
     InsertEquationNumberField
 End Sub
 
-' Group 2: Chapter & Section Breaks
-Public Sub OnInsertChapterBreakClick(Optional control As Object)
+' Group 2: ជំពូក & ផ្នែក (Chapter & Section Breaks)
+Public Sub OnInsertChapterBreakClick(control As IRibbonControl)
     InsertBreakMarker "chapter"
 End Sub
 
-Public Sub OnInsertSectionBreakClick(Optional control As Object)
+Public Sub OnInsertSectionBreakClick(control As IRibbonControl)
     InsertBreakMarker "section"
 End Sub
 
-Public Sub OnInsertNextChapterBreakClick(Optional control As Object)
+Public Sub OnInsertNextChapterBreakClick(control As IRibbonControl)
     InsertBreakMarker "next_chapter"
 End Sub
 
-Public Sub OnInsertNextSectionBreakClick(Optional control As Object)
+Public Sub OnInsertNextSectionBreakClick(control As IRibbonControl)
     InsertBreakMarker "next_section"
 End Sub
 
-Public Sub OnModifyChapterBreakClick(Optional control As Object)
-    MsgBox "Chapter Break Configuration: Set starting chapter number.", vbInformation, "MathEditor"
+Public Sub OnModifyChapterBreakClick(control As IRibbonControl)
+    MsgBox "ការកំណត់លេខរៀងជំពូក: បានកំណត់លេខរៀងជំពូកចាប់ផ្ដើម។", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnModifySectionBreakClick(Optional control As Object)
-    MsgBox "Section Break Configuration: Set starting section number.", vbInformation, "MathEditor"
+Public Sub OnModifySectionBreakClick(control As IRibbonControl)
+    MsgBox "ការកំណត់លេខរៀងផ្នែក: បានកំណត់លេខរៀងផ្នែកចាប់ផ្ដើម។", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnDeleteSectionBreakClick(Optional control As Object)
+Public Sub OnDeleteSectionBreakClick(control As IRibbonControl)
     DeleteCurrentBreakMarker
 End Sub
 
-Public Sub OnToggleShowBreaksClick(Optional control As Object)
+Public Sub OnToggleShowBreaksClick(control As IRibbonControl)
     On Error Resume Next
     ActiveWindow.View.ShowHiddenText = Not ActiveWindow.View.ShowHiddenText
 End Sub
 
-' Group 3: Equation Numbering & References
-Public Sub OnUpdateNumFormatClick(Optional control As Object)
-    MsgBox "Equation Number Format: (Chapter.Section.Equation)", vbInformation, "MathEditor"
+' Group 3: លេខរៀង & ការយោងសមីការ (Numbering & References)
+Public Sub OnUpdateNumFormatClick(control As IRibbonControl)
+    MsgBox "ទម្រង់បង្ហាញលេខរៀងសមីការ: (ជំពូក.ផ្នែក.សមីការ)", vbInformation, "MathEditor"
 End Sub
 
-Public Sub OnUpdateAllNumbersClick(Optional control As Object)
+Public Sub OnUpdateAllNumbersClick(control As IRibbonControl)
     UpdateAllFieldsInDoc
 End Sub
 
-Public Sub OnInsertEqRefClick(Optional control As Object)
+Public Sub OnInsertEqRefClick(control As IRibbonControl)
     InsertEquationReferenceLink
 End Sub
 
-Public Sub OnAutoAlignToggle(Optional control As Object, Optional pressed As Boolean)
+Public Sub OnAutoAlignToggle(control As IRibbonControl, pressed As Boolean)
     gAutoAlignEnabled = pressed
     If pressed Then
-        MsgBox "Auto-Align Enabled: Equations will automatically adjust baseline depth on insertion.", vbInformation, "MathEditor"
+        MsgBox "បានបើកការតម្រឹមស្វ័យប្រវត្តិ: សមីការនឹងតម្រឹមជួរជម្រៅដោយស្វ័យប្រវត្តិពេលបញ្ចូល។", vbInformation, "MathEditor"
     End If
 End Sub
 
@@ -136,7 +138,7 @@ Public Sub EditSelectedEquation()
     End If
     
     If shape Is Nothing Then
-        MsgBox "Please select a MathEditor equation image to edit.", vbExclamation, "MathEditor"
+        CallAppCommand "new-inline"
         Exit Sub
     End If
     
@@ -144,7 +146,7 @@ Public Sub EditSelectedEquation()
     altText = shape.AlternativeText
     
     If InStr(altText, "ratio:") = 0 And InStr(altText, "latex:") = 0 Then
-        MsgBox "The selected image is not a valid MathEditor equation.", vbExclamation, "MathEditor"
+        CallAppCommand "new-inline"
         Exit Sub
     End If
     
@@ -165,7 +167,7 @@ Public Sub EditSelectedEquation()
     Exit Sub
 
 ErrorHandler:
-    MsgBox "Error communicating with MathEditor: " & Err.Description, vbCritical, "MathEditor"
+    CallAppCommand "new-inline"
 End Sub
 
 Public Sub AlignDocumentEquations()
@@ -193,7 +195,8 @@ Public Sub AlignDocumentEquations()
         End If
     Next ishape
     
-    MsgBox "Baseline Alignment Complete! Adjusted " & count & " math equations.", vbInformation, "MathEditor"
+    MsgBox "ការតម្រឹមជួរស្វ័យប្រវត្តបានបញ្ចប់! បានតម្រឹមសមីការចំនួន " & count & " ក្នុង Document។", vbInformation, "MathEditor"
+    CallAppCommand "new-inline"
 End Sub
 
 Public Sub InsertNumberedEquation(align As String)
@@ -246,7 +249,7 @@ Public Sub UpdateAllFieldsInDoc()
     For Each fld In ActiveDocument.Fields
         fld.Update
     Next fld
-    MsgBox "All equation numbers and field references updated!", vbInformation, "MathEditor"
+    MsgBox "បានធ្វើបច្ចុប្បន្នភាពលេខរៀងសមីការ និងការយោងទាំងអស់ក្នុង Document!", vbInformation, "MathEditor"
 End Sub
 
 Public Sub InsertEquationReferenceLink()
@@ -269,7 +272,7 @@ Private Sub CallAppCommand(cmd As String)
 
 Fallback:
     On Error Resume Next
-    MacScript ("do shell script ""curl -X POST http://127.0.0.1:45678/" & cmd & """")
+    MacScript "do shell script ""curl -s -X POST http://127.0.0.1:45678/" & cmd & """"
 End Sub
 
 Private Sub SendLatexToServer(encodedLatex As String)
@@ -287,8 +290,8 @@ Private Sub SendLatexToServer(encodedLatex As String)
 Fallback:
     On Error Resume Next
     Dim appleScriptCode As String
-    appleScriptCode = "do shell script ""curl -X POST http://127.0.0.1:45678/edit " & _
+    appleScriptCode = "do shell script ""curl -s -X POST http://127.0.0.1:45678/edit " & _
                       "-H 'Content-Type: application/json' " & _
                       "-d '" & jsonPayload & "'"""
-    MacScript (appleScriptCode)
+    MacScript appleScriptCode
 End Sub
