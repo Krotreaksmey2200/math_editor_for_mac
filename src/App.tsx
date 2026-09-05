@@ -4,7 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import "mathlive"; // Imports the <math-field> web component
 import katex from "katex";
 import { mathTypeRow1, mathTypeRow2, MathTypePalette } from "./mathTypeData";
-import { CheckCircle, AlertCircle, Send } from "lucide-react";
+import { CheckCircle, AlertCircle, Send, Save } from "lucide-react";
 import "./App.css";
 
 interface TeXOutput {
@@ -58,7 +58,8 @@ const t = {
     created: "Created by",
     copyBtn: "Copy to Word", insertBtn: "Insert into Word",
     customSizeMenu: "Custom...", customSizeTitle: "Custom Font Size", customSizePrompt: "Enter custom font size (e.g. 16pt, 32pt):",
-    cancel: "Cancel", setSize: "Set Size", defaultText: "(Default)", shortcuts: "MathType Keyboard Shortcuts"
+    cancel: "Cancel", setSize: "Set Size", defaultText: "(Default)", shortcuts: "MathType Keyboard Shortcuts",
+    save: "Save", preambleSaved: "Preamble saved successfully!", emptyEqWarning: "Please enter an equation first!"
   },
   km: {
     file: "ឯកសារ", edit: "កែប្រែ", view: "បង្ហាញ", preamble: "Preamble", style: "រចនាបថ", size: "ទំហំ", pref: "ការកំណត់", help: "ជំនួយ",
@@ -68,7 +69,8 @@ const t = {
     created: "បង្កើតដោយ",
     copyBtn: "ចម្លងទៅ Word", insertBtn: "បញ្ចូលទៅ Word",
     customSizeMenu: "ទំហំផ្សេងៗ...", customSizeTitle: "កំណត់ទំហំអក្សរ", customSizePrompt: "បញ្ចូលទំហំអក្សរ (ឧទាហរណ៍៖ 16pt, 32pt):",
-    cancel: "បោះបង់", setSize: "យល់ព្រម", defaultText: "(ដើម)", shortcuts: "គ្រាប់ចុចកាត់ MathType (Shortcuts)"
+    cancel: "បោះបង់", setSize: "យល់ព្រម", defaultText: "(ដើម)", shortcuts: "គ្រាប់ចុចកាត់ MathType (Shortcuts)",
+    save: "រក្សាទុក", preambleSaved: "បានរក្សាទុក Preamble ដោយជោគជ័យ!", emptyEqWarning: "សូមបញ្ចូលសមីការជាមុនសិន!"
   }
 };
 
@@ -179,9 +181,18 @@ function MenuBarButton({ label, items }: { label: string, items: { label: string
   );
 }
 
+const DEFAULT_PREAMBLE = `\\usepackage{amsmath,amssymb,amsfonts}
+\\usepackage{xcolor}
+%\\usepackage{mathpazo}
+\\usepackage{fontspec}
+\\setmainfont{Khmer OS System}[
+    Script=Khmer,
+    Renderer=HarfBuzz % ជួយរៀបជើង និងស្រៈខ្មែរឱ្យត្រឹមត្រូវល្អ
+]`;
+
 export default function App() {
   const [appLang, setAppLang] = useState<Lang>("en");
-  const [latex, setLatex] = useState<string>("f(x) = \\frac{ax^3 + bx^2 + 4}{x - 2}");
+  const [latex, setLatex] = useState<string>("");
 
   const [isCompiling, setIsCompiling] = useState<boolean>(false);
   const [compileError, setCompileError] = useState<string>("");
@@ -192,16 +203,42 @@ export default function App() {
   const [showShortcutsModal, setShowShortcutsModal] = useState<boolean>(false);
   const [showCustomSize, setShowCustomSize] = useState<boolean>(false);
   const [customSizeInput, setCustomSizeInput] = useState<string>("12pt");
-  const [latexEngine, setLatexEngine] = useState<"latex" | "xelatex" | "lualatex">("latex");
-  const [preamble, setPreamble] = useState(`\\usepackage{amsmath,amssymb,amsfonts}
-\\usepackage{xcolor}
-%\\usepackage{mathpazo}
-\\usepackage{fontspec}
-\\setmainfont{Khmer OS System}[
-    Script=Khmer,
-    Renderer=HarfBuzz % ជួយរៀបជើង និងស្រៈខ្មែរឱ្យត្រឹមត្រូវល្អ
-]`);
+  const [latexEngine, setLatexEngine] = useState<"latex" | "xelatex" | "lualatex">(() => {
+    try {
+      return (localStorage.getItem("mactex_engine") as any) || "latex";
+    } catch {
+      return "latex";
+    }
+  });
+  const [preamble, setPreamble] = useState<string>(() => {
+    try {
+      return localStorage.getItem("mactex_preamble") || DEFAULT_PREAMBLE;
+    } catch {
+      return DEFAULT_PREAMBLE;
+    }
+  });
   const [showPreambleEditor, setShowPreambleEditor] = useState<boolean>(false);
+  const [tempPreamble, setTempPreamble] = useState<string>(preamble);
+  const [tempEngine, setTempEngine] = useState<"latex" | "xelatex" | "lualatex">(latexEngine);
+
+  const openPreambleModal = () => {
+    setTempPreamble(preamble);
+    setTempEngine(latexEngine);
+    setShowPreambleEditor(true);
+  };
+
+  const handleSavePreamble = () => {
+    setPreamble(tempPreamble);
+    setLatexEngine(tempEngine);
+    try {
+      localStorage.setItem("mactex_preamble", tempPreamble);
+      localStorage.setItem("mactex_engine", tempEngine);
+    } catch (e) {
+      console.error(e);
+    }
+    setShowPreambleEditor(false);
+    showToast(t[appLang].preambleSaved);
+  };
   
   const mathFieldRef = useRef<any>(null);
 
@@ -344,7 +381,11 @@ export default function App() {
 
   // Compile using MacTeX TeX Engine
   const handleCompileAndCopy = async (inputLatex?: string) => {
-    const latexToUse = inputLatex || latex;
+    const latexToUse = inputLatex !== undefined ? inputLatex : latex;
+    if (!latexToUse || !latexToUse.trim()) {
+      showToast(t[appLang].emptyEqWarning);
+      return;
+    }
     setIsCompiling(true);
     setCompileError("");
     try {
@@ -477,6 +518,10 @@ export default function App() {
   }, []);
 
   const handleCopyOnly = async () => {
+    if (!latex || !latex.trim()) {
+      showToast(t[appLang].emptyEqWarning);
+      return;
+    }
     setIsCompiling(true);
     setCompileError("");
     try {
@@ -554,14 +599,14 @@ export default function App() {
               <div className="flex items-center space-x-3">
                 <label className="text-[12px] text-black font-medium">LaTeX Engine:</label>
                 <select 
-                  value={latexEngine} 
+                  value={tempEngine} 
                   onChange={(e) => {
-                    const newEngine = e.target.value;
-                    setLatexEngine(newEngine as any);
+                    const newEngine = e.target.value as "latex" | "xelatex" | "lualatex";
+                    setTempEngine(newEngine);
                     if (newEngine === "latex") {
-                      setPreamble(prev => prev.replace(/\\usepackage\{fontspec\}\n?/g, "").replace(/\\setmainfont\{[^}]*\}\[[\s\S]*?\]\n?/g, "").trim());
+                      setTempPreamble(prev => prev.replace(/\\usepackage\{fontspec\}\n?/g, "").replace(/\\setmainfont\{[^}]*\}\[[\s\S]*?\]\n?/g, "").trim());
                     } else if (newEngine === "xelatex") {
-                      setPreamble(prev => {
+                      setTempPreamble(prev => {
                         if (!prev.includes("fontspec")) {
                           return prev + `\n\\usepackage{fontspec}\n\\setmainfont{Khmer OS System}[\n    Script=Khmer,\n    Renderer=HarfBuzz\n]`;
                         }
@@ -579,18 +624,25 @@ export default function App() {
               <div className="flex flex-col space-y-1">
                 <label className="text-[12px] text-black font-medium">Preamble:</label>
                 <textarea 
-                  value={preamble}
-                  onChange={(e) => setPreamble(e.target.value)}
+                  value={tempPreamble}
+                  onChange={(e) => setTempPreamble(e.target.value)}
                   className="w-full h-[150px] bg-white border border-[#a3a3a3] text-[12px] font-mono p-2 resize-none shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)] focus:outline-none focus:border-[#4a90e2]"
                   spellCheck={false}
                 />
               </div>
-              <div className="flex justify-end pt-2">
+              <div className="flex justify-end items-center space-x-2 pt-2">
                 <button 
                   onClick={() => setShowPreambleEditor(false)}
-                  className="bg-white border border-[#a3a3a3] px-4 py-1 text-[12px] rounded shadow-sm hover:bg-[#e6e6e6] active:bg-[#d4d4d4]"
+                  className="bg-white border border-[#a3a3a3] px-3 py-1 text-[12px] rounded shadow-sm hover:bg-[#e6e6e6] active:bg-[#d4d4d4]"
                 >
-                  OK
+                  {t[appLang].cancel}
+                </button>
+                <button 
+                  onClick={handleSavePreamble}
+                  className="bg-[#2B579A] text-white border border-[#1e3f70] px-4 py-1 text-[12px] font-medium rounded shadow-sm hover:bg-[#224478] active:bg-[#1a355d] flex items-center space-x-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{t[appLang].save}</span>
                 </button>
               </div>
             </div>
@@ -633,7 +685,7 @@ export default function App() {
             } }
           ]} />
           <MenuBarButton label={t[appLang].preamble} items={[
-            { label: t[appLang].editPreamble, action: () => setShowPreambleEditor(true) }
+            { label: t[appLang].editPreamble, action: openPreambleModal }
           ]} />
           <MenuBarButton label={t[appLang].style} items={[
             { label: "Text", action: () => { if(mathFieldRef.current) mathFieldRef.current.insert('\text{#0}'); } },
@@ -915,7 +967,7 @@ export default function App() {
                 <img src="/logo.png" alt="App Logo" className="w-full h-full object-contain drop-shadow-md rounded-2xl" />
               </div>
               <h2 className="text-xl font-bold" style={{ color: '#000000' }}>MacTeX MathEditor</h2>
-              <p className="text-sm font-medium bg-[#f0f0f0] px-4 py-1 rounded-full border border-[#cccccc]" style={{ color: '#000000' }}>Version 1.5.0</p>
+              <p className="text-sm font-medium bg-[#f0f0f0] px-4 py-1 rounded-full border border-[#cccccc]" style={{ color: '#000000' }}>Version 1.6.0</p>
               
               <div className="mt-4 pt-4 border-t border-[#eeeeee] w-full flex flex-col items-center">
                 <p className="text-sm font-semibold" style={{ color: '#000000' }}>{t[appLang].created}</p>
