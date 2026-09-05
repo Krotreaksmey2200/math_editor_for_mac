@@ -10,6 +10,13 @@
                   onAction="OpenMacTeXMathEditor" 
                   screentip="បើក MacTeX MathEditor" 
                   supertip="បើកផ្ទាំងកម្មវិធី MacTeX MathEditor មកប្រើប្រាស់ផ្ទាល់" />
+          <button id="btnToggleTeX" 
+                  label="Toggle TeX" 
+                  imageMso="EquationInsert" 
+                  size="large" 
+                  onAction="ToggleTeX" 
+                  screentip="Toggle TeX ($...$)" 
+                  supertip="បំប្លែងសមីការ $...$ មួយៗដាច់ពីគ្នា ឬបំប្លែងសមីការរូបភាពត្រឡប់ទៅជាអក្សរវិញ" />
         </group>
       </tab>
     </tabs>

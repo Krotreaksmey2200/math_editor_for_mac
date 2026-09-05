@@ -24,12 +24,20 @@ pub struct AppState {
     pub app_handle: Option<tauri::AppHandle>,
 }
 
+use std::io::Write;
+pub fn log_debug(msg: &str) {
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open("/tmp/mactex_debug.log") {
+        let _ = writeln!(f, "[DEBUG] {}", msg);
+    }
+}
+
 #[derive(Deserialize)]
 struct EditPayload {
     latex: String,
 }
 
 fn activate_app_window(app: &tauri::AppHandle) {
+    log_debug("activate_app_window called");
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.unminimize();
         let _ = window.show();
@@ -82,6 +90,24 @@ async fn new_display_handler(
     "OK"
 }
 
+async fn toggle_tex_handler(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    log_debug("/toggle-tex HTTP request received");
+    if let Some(app) = &state.app_handle {
+        let windows = app.webview_windows();
+        log_debug(&format!("Found {} webview window(s)", windows.len()));
+        for (_label, window) in windows {
+            let eval_res = window.eval("if (window.__triggerToggleTeX) { window.__triggerToggleTeX(); }");
+            log_debug(&format!("window.eval result: {:?}", eval_res));
+        }
+        activate_app_window(app);
+    } else {
+        log_debug("state.app_handle is None in toggle_tex_handler!");
+    }
+    "OK"
+}
+
 async fn ws_handler(
     ws: WebSocketUpgrade,
     State(state): State<AppState>,
@@ -123,6 +149,7 @@ async fn start_server(state: AppState) {
         .route("/edit", post(edit_handler))
         .route("/new-inline", post(new_inline_handler))
         .route("/new-display", post(new_display_handler))
+        .route("/toggle-tex", post(toggle_tex_handler))
         .fallback_service(ServeDir::new(addin_dir))
         .layer(CorsLayer::permissive())
         .with_state(state);
@@ -217,6 +244,8 @@ unsafe fn set_macos_clipboard(svg: &str, png_bytes: &[u8], latex: &str, mathml: 
 
 #[tauri::command]
 fn greet(name: &str) -> String {
+    log_debug(&format!("JS invoke greet: {}", name));
+    eprintln!("--> [JS-INVOKE] greet: {}", name);
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
@@ -289,51 +318,43 @@ async fn copy_to_clipboard(
 }
 
 #[tauri::command]
-async fn insert_into_word(_latex: String, _is_svg: bool, ratio: f64) -> Result<(), String> {
+async fn insert_into_word(latex: String, is_svg: bool, ratio: f64) -> Result<(), String> {
+    let _ = is_svg;
     #[cfg(target_os = "macos")]
     {
         let script = format!(r#"
 on run argv
     set latex_str to item 1 of argv
     
-    tell application "Microsoft Word" to activate
-    
     tell application "Microsoft Word"
+        activate
         set startPos to start of content of text object of selection
         paste object text object of selection
-    end tell
-    
-    tell application "Microsoft Word"
-        set endPos to start of content of text object of selection
-        set loopCount to 0
-        repeat while endPos = startPos and loopCount < 100
-            delay 0.1
-            set endPos to start of content of text object of selection
-            set loopCount to loopCount + 1
+        
+        -- Find the newly inserted picture at startPos
+        set picCount to count of inline pictures of active document
+        repeat with i from 1 to picCount
+            set theShape to inline picture i of active document
+            set shapeObj to text object of theShape
+            if (start of content of shapeObj) = startPos then
+                try
+                    set ratioVal to (run script "{}")
+                    set shapeHeight to height of theShape
+                    set actual_depth to shapeHeight * ratioVal
+                    set font position of font object of shapeObj to -actual_depth
+                    set alternative text of theShape to "ratio:" & "{}" & "|latex:" & latex_str
+                end try
+                exit repeat
+            end if
         end repeat
         
-        if endPos > startPos then
-            set picCount to count of inline pictures of active document
-            repeat with i from 1 to picCount
-                set theShape to inline picture i of active document
-                set shapeObj to text object of theShape
-                set shapeStart to start of content of shapeObj
-                if shapeStart >= startPos and shapeStart < endPos then
-                    try
-                        set ratioVal to (run script "{}")
-                        set shapeHeight to height of theShape
-                        set actual_depth to shapeHeight * ratioVal
-                        set font position of font object of shapeObj to -actual_depth
-                        set alternative text of theShape to "ratio:" & "{}" & "|latex:" & latex_str
-                        try
-                            make new hyperlink at theShape with properties {{address:"", sub address:"EditSelectedEquation"}}
-                        on error
-                        end try
-                    on error
-                    end try
-                end if
-            end repeat
-        end if
+        -- Advance selection immediately after the inserted shape
+        try
+            set selRange to create range active document start (startPos + 1) end (startPos + 1)
+            select selRange
+        on error
+            collapse range (text object of selection) direction collapse end
+        end try
     end tell
 end run
         "#, ratio, ratio);
@@ -341,7 +362,7 @@ end run
         let output = std::process::Command::new("osascript")
             .arg("-e")
             .arg(&script)
-            .arg(&_latex)
+            .arg(&latex)
             .output()
             .map_err(|e| format!("Failed to execute AppleScript: {}", e))?;
             
@@ -366,66 +387,41 @@ async fn toggle_tex_in_word() -> Result<String, String> {
                     if (count of inline pictures of selTextObj) > 0 then
                         set theShape to inline picture 1 of selTextObj
                         set altText to alternative text of theShape
-                        if altText is not missing value then
+                        if altText is not missing value and altText is not "" then
                             set latexCode to altText
                             set AppleScript's text item delimiters to "|latex:"
                             set parts to text items of altText
                             if length of parts is greater than 1 then
                                 set latexCode to item 2 of parts
+                            else
+                                set AppleScript's text item delimiters to "|"
+                                set parts2 to text items of altText
+                                if length of parts2 is greater than 1 then
+                                    set latexCode to item 2 of parts2
+                                end if
                             end if
                             set AppleScript's text item delimiters to ""
                             
+                            if latexCode starts with "ratio:" then
+                                set AppleScript's text item delimiters to "|"
+                                set parts3 to text items of latexCode
+                                if length of parts3 is greater than 1 then
+                                    set latexCode to item 2 of parts3
+                                end if
+                                set AppleScript's text item delimiters to ""
+                            end if
+                            
                             if latexCode is not "" then
+                                if latexCode does not start with "$" then
+                                    set latexCode to "$" & latexCode & "$"
+                                end if
                                 delete theShape
                                 type text text latexCode
                                 return "Success: Toggled Image to Text"
                             end if
                         end if
                     end if
-                    
-                    set latexCode to content of text object of mySel
-                    if latexCode is missing value then
-                        set latexCode to ""
-                    end if
-                    
-                    if latexCode is "" then
-                        set origStart to start of content of text object of mySel
-                        
-                        set rng to text object of mySel
-                        set findObj to find object of rng
-                        clear formatting findObj
-                        set forward of findObj to false
-                        set wrap of findObj to find stop
-                        execute find findObj find text "$"
-                        
-                        if found of findObj then
-                            set dollarStart to start of content of rng
-                            
-                            set rng2 to create range active document start origStart end origStart
-                            set findObj2 to find object of rng2
-                            clear formatting findObj2
-                            set forward of findObj2 to true
-                            set wrap of findObj2 to find stop
-                            execute find findObj2 find text "$"
-                            
-                            if found of findObj2 then
-                                set dollarEnd to end of content of rng2
-                                set mySel to create range active document start dollarStart end dollarEnd
-                                select mySel
-                                set latexCode to content of text object of mySel
-                                if latexCode is missing value then
-                                    set latexCode to ""
-                                end if
-                            end if
-                        end if
-                    end if
-                    
-                    if latexCode is not "" then
-                        tell application id "com.heng.mactex-math-editor" to activate
-                        return "SuccessText:" & latexCode
-                    end if
-                    
-                    return "Error: No equation selected. Please select $...$ or click an equation image."
+                    return "NeedCompile"
                 end tell
             on error errMsg
                 return "Error: " & errMsg
@@ -458,13 +454,20 @@ async fn init_batch_compile() -> Result<String, String> {
             try
                 tell application "Microsoft Word"
                     set mySel to selection
-                    set rngEnd to create range active document start (end of content of text object of mySel) end (end of content of text object of mySel)
+                    set sP to start of content of text object of mySel
+                    set eP to end of content of text object of mySel
+                    if sP is equal to eP then
+                        set curPara to paragraph 1 of text object of mySel
+                        set sP to start of content of text object of curPara
+                        set eP to end of content of text object of curPara
+                    end if
+                    set rngEnd to create range active document start eP end eP
                     if exists bookmark "MacTexBatchEnd" of active document then
                         delete bookmark "MacTexBatchEnd" of active document
                     end if
                     make new bookmark at active document with properties {name:"MacTexBatchEnd", text object:rngEnd}
-                    collapse range (text object of mySel) direction collapse start
-                    select (text object of mySel)
+                    set rngStart to create range active document start sP end sP
+                    select rngStart
                     return "Success"
                 end tell
             on error errMsg
@@ -511,24 +514,28 @@ async fn find_next_math_in_word() -> Result<String, String> {
         let script = r#"
             try
                 tell application "Microsoft Word"
-                    set mySel to selection
-                    set findObj to find object of text object of mySel
-                    clear formatting findObj
-                    set match wildcards of findObj to true
-                    set forward of findObj to true
-                    set wrap of findObj to find stop
-                    execute find findObj find text "\\$[!$]@\\$"
+                    set myFind to find object of selection
+                    clear formatting myFind
+                    set match wildcards of myFind to true
+                    set forward of myFind to true
+                    set wrap of myFind to find stop
+                    execute find myFind find text "\\${1,2}([!$]@)\\${1,2}"
                     
-                    if found of findObj then
+                    if found of myFind then
+                        set foundStart to start of content of text object of selection
+                        
                         if exists bookmark "MacTexBatchEnd" of active document then
-                            set foundStart to start of content of text object of mySel
                             set markStart to start of content of text object of bookmark "MacTexBatchEnd" of active document
+                            if markStart is missing value then
+                                set markStart to end of content of text object of active document
+                            end if
                             if foundStart >= markStart then
                                 delete bookmark "MacTexBatchEnd" of active document
                                 return "DONE"
                             end if
                         end if
-                        set foundText to content of text object of mySel
+                        
+                        set foundText to content of text object of selection
                         if foundText is missing value then
                             set foundText to ""
                         end if
@@ -561,6 +568,22 @@ async fn find_next_math_in_word() -> Result<String, String> {
     }
     #[cfg(not(target_os = "macos"))]
     Ok("DONE".into())
+}
+
+#[tauri::command]
+async fn skip_current_math_in_word() -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let script = r#"
+            try
+                tell application "Microsoft Word"
+                    collapse range (text object of selection) direction collapse end
+                end tell
+            end try
+        "#;
+        let _ = std::process::Command::new("osascript").arg("-e").arg(script).output();
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -672,6 +695,7 @@ async fn open_word() -> Result<(), String> {
 
 #[tauri::command]
 async fn check_word_connection() -> Result<bool, String> {
+    eprintln!("--> [RUST] check_word_connection called from JS!");
     #[cfg(target_os = "macos")]
     {
         let script = r#"
@@ -708,6 +732,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
+            log_debug("Tauri setup starting...");
             let app_handle = app.handle().clone();
             let (tx, _rx) = broadcast::channel::<String>(100);
             let state = AppState { 
@@ -720,6 +745,7 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 start_server(state).await;
             });
+            log_debug("Tauri setup finished.");
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -732,6 +758,7 @@ pub fn run() {
             init_batch_compile,
             finish_batch_compile,
             find_next_math_in_word,
+            skip_current_math_in_word,
             open_word,
             check_word_connection,
             toggle_tex_in_word,

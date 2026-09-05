@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "mactex-math-editor",
         "width": 800,
         "height": 600
@@ -23,7 +24,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["app"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

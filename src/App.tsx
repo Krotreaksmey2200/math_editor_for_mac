@@ -244,6 +244,7 @@ export default function App() {
 
   // Setup MathLive
   useEffect(() => {
+    invoke("greet", { name: "App component MOUNTED successfully!" });
     const mf = mathFieldRef.current;
     if (mf) {
       mf.value = latex;
@@ -448,9 +449,11 @@ export default function App() {
       await invoke("insert_into_word", { latex: latexToUse, isSvg: isSvg, ratio: appliedRatio });
       
       showToast("Equation copied to Word!");
+      return true;
     } catch (err: any) {
       setCompileError(typeof err === 'string' ? err : err.message || "Compilation failed.");
       showToast("Error copying to Word.");
+      return false;
     } finally {
       setIsCompiling(false);
     }
@@ -460,20 +463,29 @@ export default function App() {
     setIsCompiling(true);
     setCompileError("");
     try {
+      await invoke("greet", { name: "handleCompileAll started" });
       await invoke("init_batch_compile");
       let foundCount = 0;
       while (true) {
         showToast(`Processing equation ${foundCount + 1}...`);
         const res = await invoke<string>("find_next_math_in_word");
+        await invoke("greet", { name: `find_next_math_in_word result: ${res}` });
         if (res.startsWith("SuccessText:")) {
           let text = res.replace("SuccessText:", "");
           text = text.replace(/^\$+|\$+$/g, '').trim();
           if (text !== "") {
             setLatex(text);
-            await handleCompileAndCopy(text);
-            foundCount++;
-            // Add a tiny delay to allow Word to process paste and update selection
-            await new Promise(r => setTimeout(r, 200));
+            const success = await handleCompileAndCopy(text);
+            await invoke("greet", { name: `handleCompileAndCopy success: ${success}` });
+            if (success) {
+              foundCount++;
+            } else {
+              await invoke("skip_current_math_in_word");
+            }
+            // Add a tiny delay to allow Word to update selection
+            await new Promise(r => setTimeout(r, 80));
+          } else {
+            await invoke("skip_current_math_in_word");
           }
         } else {
           break; // DONE or Error
@@ -485,10 +497,45 @@ export default function App() {
         showToast("No equations found in selection.");
       }
     } catch (err: any) {
+      await invoke("greet", { name: `handleCompileAll error: ${err}` });
       showToast("Batch compile error");
     } finally {
       await invoke("finish_batch_compile");
       setIsCompiling(false);
+    }
+  };
+
+  const isCompilingRef = useRef<boolean>(false);
+  isCompilingRef.current = isCompiling;
+
+  const handleToggleTeX = async () => {
+    if (isCompilingRef.current) {
+      console.log("Toggle TeX already in progress, skipping duplicate call");
+      return;
+    }
+    try {
+      await invoke("greet", { name: "handleToggleTeX started" });
+      showToast("Checking selection in Word...");
+      const res = await invoke<string>("toggle_tex_in_word");
+      await invoke("greet", { name: `toggle_tex_in_word result: ${res}` });
+      if (res.startsWith("Success: Toggled Image to Text")) {
+        showToast("Toggled equation image back to LaTeX text!");
+        return;
+      }
+      // If it is text or cursor, batch compile all $...$ equations in the selection/paragraph
+      await handleCompileAll();
+    } catch (e: any) {
+      await invoke("greet", { name: `handleToggleTeX error: ${e}` });
+      showToast(e.toString());
+    }
+  };
+
+  const handleToggleTeXRef = useRef<any>(null);
+  handleToggleTeXRef.current = handleToggleTeX;
+  (window as any).__triggerToggleTeX = () => {
+    invoke("greet", { name: "__triggerToggleTeX called from window" });
+    if (handleToggleTeXRef.current) {
+      handleToggleTeXRef.current();
     }
   };
 
@@ -715,26 +762,9 @@ export default function App() {
         </div>
         <div className="flex space-x-2 items-center ml-auto mr-2">
           <button
-            onClick={async () => {
-              try {
-                showToast("Toggling equation in Word...");
-                const res = await invoke<string>("toggle_tex_in_word");
-                if (res.startsWith("SuccessText:")) {
-                  let text = res.replace("SuccessText:", "");
-                  text = text.replace(/^\$+|\$+$/g, '').trim();
-                  setLatex(text);
-                  await handleCompileAndCopy(text);
-                  showToast("Toggled Text to App");
-                } else if (res.startsWith("Success")) {
-                  showToast(res.replace("Success: ", ""));
-                } else {
-                  showToast(res);
-                }
-              } catch (e: any) {
-                showToast(e.toString());
-              }
-            }}
-            className={`flex items-center justify-center px-2 h-[20px] rounded text-[10px] font-semibold transition-colors border text-blue-600 hover:bg-white/50 border-[#8cb0d8] hover:border-blue-500 cursor-pointer`}
+            onClick={handleToggleTeX}
+            disabled={isCompiling}
+            className={`flex items-center justify-center px-2 h-[20px] rounded text-[10px] font-semibold transition-colors border text-blue-600 hover:bg-white/50 border-[#8cb0d8] hover:border-blue-500 cursor-pointer disabled:opacity-50`}
             title="Toggle Equation in Word"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="mr-1">
